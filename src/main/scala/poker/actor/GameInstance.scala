@@ -22,6 +22,7 @@ object GameInstance:
   case class GameJoined(playerId: String, state: GameState) extends Response
   case class GameStarted(state: GameState) extends Response
   case class ActionSuccess(state: GameState) extends Response
+  case class GameOver(winnerId: String, state: GameState) extends Response
   case class Error(msg: String) extends Response
 
   def apply(id: String, settings: GameSettings = GameSettings()): Behavior[Command] =
@@ -57,6 +58,33 @@ object GameInstance:
       val newState = state.copy(players = state.players.filterNot(_.id == playerId))
       replyTo ! ActionSuccess(newState)
       waitingForPlayers(newState)
+
+    case _ =>
+      Behaviors.unhandled
+  }
+
+  // Between hands: game is in progress but no hand is being played.
+  // New players cannot join – the roster is locked once StartGame is called.
+  private def betweenHands(state: GameState): Behavior[Command] = Behaviors.receiveMessage {
+    case JoinGame(_, _, replyTo) =>
+      replyTo ! Error("Cannot join after the game has started")
+      Behaviors.same
+
+    case StartGame(replyTo) =>
+      if state.status == GameStatus.Finished then
+        replyTo ! Error("Tournament is over")
+        Behaviors.same
+      else if state.players.count(_.chips > 0) < 2 then
+        replyTo ! Error("Not enough players with chips to continue")
+        Behaviors.same
+      else
+        val newState = PokerEngine.startNewHand(state)
+        replyTo ! GameStarted(newState)
+        playing(newState)
+
+    case GetState(replyTo) =>
+      replyTo ! state
+      Behaviors.same
 
     case _ =>
       Behaviors.unhandled
@@ -134,11 +162,15 @@ object GameInstance:
           else
             stWithNextTurn
 
-          replyTo ! ActionSuccess(finalState)
-
-          if finalState.status == GameStatus.WaitingForPlayers || finalState.status == GameStatus.Finished then
-            waitingForPlayers(finalState)
+          if finalState.status == GameStatus.Finished then
+            val winnerId = finalState.players.find(_.chips > 0).map(_.id).getOrElse("unknown")
+            replyTo ! GameOver(winnerId, finalState)
+            betweenHands(finalState)
+          else if finalState.status == GameStatus.WaitingForPlayers then
+            replyTo ! ActionSuccess(finalState)
+            betweenHands(finalState)
           else
+            replyTo ! ActionSuccess(finalState)
             playing(finalState)
         catch
           case e: Exception =>

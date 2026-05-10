@@ -65,5 +65,26 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val started = probe.expectMessageType[GameInstance.GameStarted]
       
     }
+    "reject JoinGame after the tournament has started" in {
+      val game = testKit.spawn(GameInstance("table-4"))
+      val probe = testKit.createTestProbe[GameInstance.Response]()
+
+      game ! GameInstance.JoinGame("p1", "P1", probe.ref)
+      probe.expectMessageType[GameInstance.GameJoined]
+      game ! GameInstance.JoinGame("p2", "P2", probe.ref)
+      probe.expectMessageType[GameInstance.GameJoined]
+
+      game ! GameInstance.StartGame(probe.ref)
+      val started = probe.expectMessageType[GameInstance.GameStarted]
+
+      // A hand ends – one player folds
+      val foldingId = started.state.currentPlayer.get.id
+      game ! GameInstance.Fold(foldingId, probe.ref)
+      probe.expectMessageType[GameInstance.ActionSuccess]
+
+      // Now the game is between hands – new player tries to join
+      game ! GameInstance.JoinGame("p3", "Late Player", probe.ref)
+      probe.expectMessageType[GameInstance.Error]
+    }
   }
 }

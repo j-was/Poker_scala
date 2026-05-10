@@ -2,7 +2,7 @@
 
 ### Join a table
 ```json
-{ "type": "JoinGame", "playerId": "abc123", "name": "Marek" }
+{ "type": "JoinGame", "playerId": "abc123", "name": "John" }
 ```
 > Starting chips are set by the server based on tournament settings
 
@@ -33,7 +33,7 @@
 
 ### Game state update
 
-After every action the server pushes a new state to all players. Data is scrubbed so that each client only receives their own hidden data.
+After every action the server pushes a new state to all players. Data should be scrubbed so that each client only receives their own hidden data.
 
 ```json
 {
@@ -60,7 +60,7 @@ After every action the server pushes a new state to all players. Data is scrubbe
     "players": [
       {
         "id": "abc123",
-        "name": "Marek",
+        "name": "John",
         "chips": 800,
         "currentBet": 200,
         "isActive": true,
@@ -108,6 +108,16 @@ Field reference:
 ```json
 { "type": "Error", "msg": "Cannot check, must call or raise" }
 ```
+
+### Game over
+
+Sent once when the tournament ends (one player has all the chips).
+
+```json
+{ "type": "GameOver", "winner": "abc123" }
+```
+
+> After receiving `GameOver` the server will also push a final `GameStateUpdate` with `status: "Finished"` so the UI can show the final chip counts.
 
 ---
 
