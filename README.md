@@ -1,6 +1,6 @@
 # Poker in Scala
 
-App to play poker with your friends. More info coming soon...
+App to play poker with your friends.
 
 This project is being developed for the **"Programming in Scala"** course at the Faculty of Mathematics and Information Science (MiNI), Warsaw University of Technology.
 
