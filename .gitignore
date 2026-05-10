@@ -1,23 +1,12 @@
-*.class
-*.log
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-
-# Scala / SBT
-target/
-project/target/
-project/project/
-.bloop/
-.metals/
-.idea/
-*.class
-*.tasty
-
 # OS
 .DS_Store
 Thumbs.db
 
 # Editor
 .vscode/settings.json
+.idea/
 *.swp
+
+node_modules/
+dist/
+.env
