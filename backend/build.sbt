@@ -1,4 +1,4 @@
-enablePlugins(JavaAppPackaging),
+enablePlugins(JavaAppPackaging)
 
 val scala3Version = "3.8.3"
 val pekkoVersion = "1.6.0"
