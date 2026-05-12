@@ -1,134 +1,403 @@
-## Frontend → Server
+# Poker WebSocket API
 
-### Join a table
-```json
-{ "type": "JoinGame", "playerId": "abc123", "name": "John" }
-```
-> Starting chips are set by the server based on tournament settings
+All communication happens over a single WebSocket connection at `ws://<host>:<port>/ws`.
 
-### Start the game
-```json
-{ "type": "StartGame" }
-```
-> At least 2 players need to be at the table.
-
-### Betting actions
-```json
-{ "type": "Check", "playerId": "abc123" }
-{ "type": "Call",  "playerId": "abc123" }
-{ "type": "Fold",  "playerId": "abc123" }
-{ "type": "Raise", "playerId": "abc123", "amount": 50 }
-```
-> Only works on your turn – otherwise you'll get an `Error` back.
-
-### Leave the table
-```json
-{ "type": "LeaveGame", "playerId": "abc123" }
-```
-> Only possible between hands.
+Every message is a JSON object with a `"type"` discriminator field.
 
 ---
 
-## Server → Frontend
+## Connection lifecycle
 
-### Game state update
+```
+Client connects
+  → Client sends   Identify
+  ← Server replies Identified        (assigns / confirms playerId)
+  → Client sends   CreateGame | JoinGame
+  ← Server replies GameCreated | GameJoined
+  ↔ Game messages flow…
+  Client disconnects (network drop / app close)
+  ← Server broadcasts PlayerDisconnected to the room
+  → Client reconnects, sends Identify with the same playerId
+  ← Server replies Identified, player's seat is restored
+  ← Server broadcasts PlayerReconnected to the room
+```
 
-After every action the server pushes a new state to all players. Data should be scrubbed so that each client only receives their own hidden data.
+> **Persist `playerId` on the client** (e.g. local storage / preferences file).  
+> Sending it back in `Identify` on reconnect restores the player's seat seamlessly.
+
+---
+
+## Client → Server
+
+### Identify (send immediately after connecting)
+
+```json
+{ "type": "Identify", "name": "John", "playerId": "abc123" }
+```
+
+| Field      | Required | Notes                                                                           |
+| ---------- | -------- | ------------------------------------------------------------------------------- |
+| `name`     | ✅       | Display name shown to other players                                             |
+| `playerId` | ❌       | Omit (or `null`) on first connect; send the previously received id to reconnect |
+
+---
+
+### Create a game
 
 ```json
 {
-  "type": "GameStateUpdate",
-  "data": {
-    "id": "table-1",
-    "status": "Playing",
-
-    "settings": {
-      "smallBlind": 10,
-      "bigBlind": 20,
-      "initialChips": 1000
-    },
-
-    "board": {
-      "phase": "Flop",
-      "cards": [
-        { "rank": "Ace",   "suit": "Spades"   },
-        { "rank": "King",  "suit": "Hearts"   },
-        { "rank": "Queen", "suit": "Diamonds" }
-      ]
-    },
-
-    "players": [
-      {
-        "id": "abc123",
-        "name": "John",
-        "chips": 800,
-        "currentBet": 200,
-        "isActive": true,
-        "hasActed": true,
-        "hasCards": true
-      }
-    ],
-
-    "pot": 600,
-    "dealerIndex": 0,
-    "currentPlayerIndex": 1,
-    "currentHighestBet": 200,
-
-    "myHoleCards": {
-      "c1": { "rank": "Jack", "suit": "Spades" },
-      "c2": { "rank": "Ten",  "suit": "Spades" }
-    },
-    "myHandCategory": "OnePair",
-    "myBestCards": [
-      { "rank": "Jack",  "suit": "Spades"   },
-      { "rank": "Jack",  "suit": "Hearts"   },
-      { "rank": "Ace",   "suit": "Clubs"    },
-      { "rank": "King",  "suit": "Diamonds" },
-      { "rank": "Queen", "suit": "Spades"   }
-    ]
+  "type": "CreateGame",
+  "settings": {
+    "smallBlind": 10,
+    "bigBlind": 20,
+    "initialChips": 1000
   }
 }
 ```
 
-Field reference:
-
-| Field | What it means |
-|-------|--------------|
-| `isActive` | `false` = player folded or is out of chips |
-| `hasActed` | whether the player already acted this betting round |
-| `hasCards` | `true` = render card backs; `false` = empty seat |
-| `dealerIndex` | who has the dealer button (index into `players`) |
-| `currentPlayerIndex` | whose turn it is (index into `players`) |
-| `myHoleCards` | your 2 hole cards – `null` for everyone else |
-| `myHandCategory` | your current best hand – `null` if you have no cards |
-| `myBestCards` | the 5 cards that make up your best hand |
-
-### Error
-
-```json
-{ "type": "Error", "msg": "Cannot check, must call or raise" }
-```
-
-### Game over
-
-Sent once when the tournament ends (one player has all the chips).
-
-```json
-{ "type": "GameOver", "winner": "abc123" }
-```
-
-> After receiving `GameOver` the server will also push a final `GameStateUpdate` with `status: "Finished"` so the UI can show the final chip counts.
+> The creator is automatically joined. The server replies with `GameCreated` containing the room code to share with other players.
 
 ---
 
-## Enum values
+### Join a game
 
-**`status`:** `WaitingForPlayers` · `Playing` · `Finished`
+```json
+{ "type": "JoinGame", "code": "swift-fox-847" }
+```
 
-**`board.phase`:** `PreFlop` · `Flop` · `Turn` · `River`
+> Codes are case-insensitive. Not possible after the host has started the game.
 
-**`myHandCategory`:** `HighCard` · `OnePair` · `TwoPair` · `ThreeOfAKind` · `Straight` · `Flush` · `FullHouse` · `FourOfAKind` · `StraightFlush`
+---
 
-**`rank`:** `Two` `Three` `Four` `Five` `Six` `Seven` `Eight` `Nine` `Ten` `Jack` `Queen` `King` `Ace`
+### Start the game
 
-**`suit`:** `Spades` · `Hearts` · `Diamonds` · `Clubs`
+```json
+{ "type": "StartGame", "code": "swift-fox-847" }
+```
+
+> Requires at least 2 players. Any player can start (there is no dedicated host role after creation).
+
+---
+
+### Betting actions
+
+```json
+{ "type": "Fold",  "code": "swift-fox-847" }
+{ "type": "Check", "code": "swift-fox-847" }
+{ "type": "Call",  "code": "swift-fox-847" }
+{ "type": "Raise", "code": "swift-fox-847", "amount": 50 }
+```
+
+> Only works on your turn — the server replies with `Error` otherwise.  
+> `amount` in `Raise` is the **raise increment** on top of the current call amount, not the total bet.
+
+---
+
+### Leave a game
+
+```json
+{ "type": "LeaveGame", "code": "swift-fox-847" }
+```
+
+> Only possible between hands. Rejected mid-hand with an `Error`.
+
+---
+
+### Ping
+
+```json
+{ "type": "Ping" }
+```
+
+> Use to keep the connection alive. Server replies with `Pong`.
+
+---
+
+## Server → Client
+
+### Identified
+
+Sent in response to `Identify`. The client must save `playerId` for reconnection.
+
+```json
+{ "type": "Identified", "playerId": "abc123", "name": "John" }
+```
+
+---
+
+### GameCreated
+
+Sent only to the player who created the game.
+
+```json
+{
+  "type": "GameCreated",
+  "code": "swift-fox-847",
+  "state": { ...ClientGameState... }
+}
+```
+
+---
+
+### GameJoined
+
+Sent only to the player who joined.
+
+```json
+{
+  "type": "GameJoined",
+  "code": "swift-fox-847",
+  "state": { ...ClientGameState... }
+}
+```
+
+---
+
+### PlayerJoined
+
+Broadcast to **all other players** already in the room when someone new joins.
+
+```json
+{
+  "type": "PlayerJoined",
+  "code": "swift-fox-847",
+  "playerId": "abc123",
+  "name": "John"
+}
+```
+
+---
+
+### PlayerLeft
+
+Broadcast to all players when someone leaves voluntarily (between hands only).
+
+```json
+{
+  "type": "PlayerLeft",
+  "code": "swift-fox-847",
+  "playerId": "abc123",
+  "name": "John"
+}
+```
+
+---
+
+### PlayerDisconnected
+
+Broadcast to all players when a WebSocket connection drops unexpectedly.  
+The player's seat is preserved; they can reconnect and resume.
+
+```json
+{
+  "type": "PlayerDisconnected",
+  "code": "swift-fox-847",
+  "playerId": "abc123",
+  "name": "John"
+}
+```
+
+> If the disconnected player is the current bettor, the server will automatically fold them after **30 seconds** of inactivity so the game never freezes.
+
+---
+
+### PlayerReconnected
+
+Broadcast to all players when a disconnected player comes back.
+
+```json
+{
+  "type": "PlayerReconnected",
+  "code": "swift-fox-847",
+  "playerId": "abc123",
+  "name": "John"
+}
+```
+
+---
+
+### GameStarted
+
+Broadcast to all players when a hand begins. Each player receives a personalised view (their own hole cards only).
+
+```json
+{
+  "type": "GameStarted",
+  "code": "swift-fox-847",
+  "state": { ...ClientGameState... }
+}
+```
+
+---
+
+### StateUpdate
+
+Broadcast to all players after every action. Each player receives a personalised view.
+
+```json
+{
+  "type": "StateUpdate",
+  "code": "swift-fox-847",
+  "state": { ...ClientGameState... }
+}
+```
+
+---
+
+### GameOver
+
+Broadcast once when the tournament ends (one player holds all chips). A final `StateUpdate` with `status: "Finished"` follows so the UI can show final chip counts.
+
+```json
+{
+  "type": "GameOver",
+  "code": "swift-fox-847",
+  "winnerId": "abc123",
+  "winnerName": "John",
+  "state": { ...ClientGameState... }
+}
+```
+
+---
+
+### Error
+
+Sent only to the player whose action triggered the error.
+
+```json
+{ "type": "Error", "message": "Cannot check, must call or raise" }
+```
+
+---
+
+### Pong
+
+```json
+{ "type": "Pong" }
+```
+
+---
+
+## ClientGameState object
+
+Included in `GameCreated`, `GameJoined`, `GameStarted`, `StateUpdate`, and `GameOver`.  
+Each player receives a personalised copy — other players' hole cards are never sent.
+
+```json
+{
+  "id": "swift-fox-847",
+  "status": "Playing",
+
+  "settings": {
+    "smallBlind": 10,
+    "bigBlind": 20,
+    "initialChips": 1000
+  },
+
+  "board": {
+    "street": "Flop",
+    "cards": [
+      { "rank": "A", "suit": "♠" },
+      { "rank": "K", "suit": "♥" },
+      { "rank": "Q", "suit": "♦" }
+    ]
+  },
+
+  "players": [
+    {
+      "id": "abc123",
+      "name": "John",
+      "chips": 800,
+      "currentBet": 200,
+      "isActive": true,
+      "hasActed": true,
+      "hasCards": true
+    }
+  ],
+
+  "pot": 600,
+  "dealerIndex": 0,
+  "currentPlayerIndex": 1,
+  "currentHighestBet": 200,
+
+  "myHoleCards": {
+    "c1": { "rank": "J", "suit": "♠" },
+    "c2": { "rank": "T", "suit": "♠" }
+  },
+  "myHandCategory": "OnePair",
+  "myBestCards": [
+    { "rank": "J", "suit": "♠" },
+    { "rank": "J", "suit": "♥" },
+    { "rank": "A", "suit": "♣" },
+    { "rank": "K", "suit": "♦" },
+    { "rank": "Q", "suit": "♠" }
+  ]
+}
+```
+
+### Player fields
+
+| Field      | Meaning                                                    |
+| ---------- | ---------------------------------------------------------- |
+| `isActive` | `false` = player folded or is sitting out (no chips)       |
+| `hasActed` | whether this player has acted in the current betting round |
+| `hasCards` | `true` → render card backs; `false` → empty seat           |
+
+### Board fields
+
+| Field    | Meaning                                                |
+| -------- | ------------------------------------------------------ |
+| `street` | Current street (see enum below)                        |
+| `cards`  | Community cards dealt so far; empty array on `PreFlop` |
+
+### My-player fields
+
+| Field                | Meaning                                                           |
+| -------------------- | ----------------------------------------------------------------- |
+| `myHoleCards`        | Your 2 hole cards. `null` when you have no cards                  |
+| `myHandCategory`     | Your current best hand category. `null` when you have no cards    |
+| `myBestCards`        | The 5 cards forming your best hand. `null` when you have no cards |
+| `dealerIndex`        | Index into `players` of the dealer-button holder                  |
+| `currentPlayerIndex` | Index into `players` of the player whose turn it is               |
+
+---
+
+## Enum reference
+
+### `status`
+
+`WaitingForPlayers` · `Playing` · `Finished`
+
+### `board.street`
+
+`PreFlop` · `Flop` · `Turn` · `River`
+
+### `myHandCategory`
+
+`HighCard` · `OnePair` · `TwoPair` · `ThreeOfAKind` · `Straight` · `Flush` · `FullHouse` · `FourOfAKind` · `StraightFlush`
+
+### `rank` (toString representation)
+
+`2` `3` `4` `5` `6` `7` `8` `9` `T` `J` `Q` `K` `A`
+
+### `suit` (toString representation)
+
+`♣` · `♦` · `♥` · `♠`
+
+---
+
+## Error reference
+
+| Message                                                   | Cause                                            |
+| --------------------------------------------------------- | ------------------------------------------------ |
+| `"Not your turn"`                                         | Action sent when it isn't your turn              |
+| `"Cannot check, must call or raise"`                      | Check attempted when there is an outstanding bet |
+| `"Not enough chips to raise"`                             | Raise amount exceeds your stack                  |
+| `"You are not in a game"`                                 | Action sent before joining a game                |
+| `"Game not found. Check the code and try again."`         | Unknown or expired room code                     |
+| `"Player already joined"`                                 | Duplicate join with the same playerId            |
+| `"Cannot join after the game has started"`                | Join attempted after `StartGame`                 |
+| `"Not enough players to start"`                           | StartGame with fewer than 2 players              |
+| `"Game already in progress"`                              | StartGame sent during an active hand             |
+| `"Cannot leave during a hand. Wait for the hand to end."` | LeaveGame mid-hand                               |
+| `"Tournament is over"`                                    | StartGame after `status: Finished`               |
