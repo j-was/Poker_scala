@@ -1,4 +1,4 @@
-# Poker in Scala
+# PokerScale
 
 App to play poker with your friends. Power up the desktop client and create a new private game on our server for your friends.
 
