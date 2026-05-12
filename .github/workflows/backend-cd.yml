@@ -2,12 +2,12 @@ name: Poker Server CD
 
 on:
   push:
-    branches: [release]
+    branches: [main]
     paths:
-      - "src/**"
-      - "build.sbt"
-      - "project/**"
-      - ".github/workflows/poker-cd.yml"
+      - "backend/**"
+      - "backend/build.sbt"
+      - "backend/project/**"
+      - ".github/workflows/backend-cd.yml"
   workflow_dispatch:
 
 jobs:
@@ -24,9 +24,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.POKER_AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.POKER_AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.POKER_AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.SCALAPOKER_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.SCALAPOKER_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.SCALAPOKER_AZURE_SUBSCRIPTION_ID }}
 
       - name: Build and push container image to registry
         uses: azure/container-apps-deploy-action@v2
@@ -34,8 +34,8 @@ jobs:
           appSourcePath: ${{ github.workspace }}
           dockerfilePath: Dockerfile
           registryUrl: docker.io
-          registryUsername: ${{ secrets.POKER_REGISTRY_USERNAME }}
-          registryPassword: ${{ secrets.POKER_REGISTRY_PASSWORD }}
+          registryUsername: ${{ secrets.SCALAPOKER_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.SCALAPOKER_REGISTRY_PASSWORD }}
           containerAppName: scalapoker
           resourceGroup: poker-rg
-          imageToBuild: ${{ secrets.POKER_REGISTRY_USERNAME }}/scalapoker:${{ github.sha }}
+          imageToBuild: ${{ secrets.SCALAPOKER_REGISTRY_USERNAME }}/scalapoker:${{ github.sha }}
