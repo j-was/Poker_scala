@@ -12,6 +12,7 @@ RUN sbt update
 COPY src/ ./src/
 RUN sbt assembly && \
     ls -la /target/scala-3.8.3/ && \
+    mkdir -p /app && \
     cp /target/scala-3.8.3/scala-poker-assembly-0.1.0-SNAPSHOT.jar /app/app.jar && \
     ls -la /app/app.jar
 
