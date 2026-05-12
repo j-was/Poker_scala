@@ -3,7 +3,7 @@ WORKDIR /
 
 # Copy build files first for dependency caching
 COPY build.sbt ./
-COPY backend/ ./project/
+COPY project/ ./project/
 RUN sbt update
 
 # Copy source code
