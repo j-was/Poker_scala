@@ -3,6 +3,15 @@ val pekkoVersion = "1.6.0"
 val pekkoHttpVersion = "1.3.0"
 val circeVersion   = "0.14.15"
 
+Compile / scalacOptions ++= Seq(
+  "-explain-cyclic",
+  "-deprecation",
+  "-feature",
+  "-unchecked"
+)
+
+Compile / mainClass := Some("poker.Main")
+
 lazy val root = project
   .in(file("."))
   .settings(
@@ -11,47 +20,31 @@ lazy val root = project
 
     scalaVersion := scala3Version,
 
-    enablePlugins(JavaAppPackaging),
-
-    Compile / scalacOptions ++= Seq(
-      "-explain-cyclic",
-      "-deprecation",
-      "-feature",
-      "-unchecked"
-    ),
-
-    Compile / mainClass := Some("poker.Main"),
+    // REMOVED: enablePlugins(JavaAppPackaging) - not needed with assembly
 
     libraryDependencies ++= Seq(
+      // Testing
       "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
       "org.apache.pekko" %% "pekko-actor-testkit-typed" % pekkoVersion % Test,
-      "org.scalatest" %% "scalatest" % "3.2.17" % Test
-    ),
+      "org.scalatest" %% "scalatest" % "3.2.17" % Test,
 
-      // ── Pekko (actor system) ──────────────────────────────────────────────────
-      libraryDependencies ++= Seq(
-      "org.apache.pekko" %% "pekko-actor-typed"         % pekkoVersion,
-      "org.apache.pekko" %% "pekko-stream"              % pekkoVersion,
-      "org.apache.pekko" %% "pekko-stream-typed"        % pekkoVersion,
-      "org.apache.pekko" %% "pekko-slf4j"               % pekkoVersion,
-    ),
+      // Pekko (actor system)
+      "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
+      "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
+      "org.apache.pekko" %% "pekko-stream-typed" % pekkoVersion,
+      "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
 
-    // ── Pekko HTTP (WebSocket server) ─────────────────────────────────────────
-    libraryDependencies ++= Seq(
+      // Pekko HTTP (WebSocket server)
       "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion,
       "org.apache.pekko" %% "pekko-http-spray-json" % pekkoHttpVersion,
       "org.apache.pekko" %% "pekko-http-core" % pekkoHttpVersion,
-    ),
 
-    // ── JSON (circe) ──────────────────────────────────────────────────────────
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core"    % circeVersion,
+      // JSON (circe)
+      "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
-      "io.circe" %% "circe-parser"  % circeVersion,
-    ),
+      "io.circe" %% "circe-parser" % circeVersion,
 
-    // ── Logging ───────────────────────────────────────────────────────────────
-    libraryDependencies ++= Seq(
+      // Logging
       "ch.qos.logback" % "logback-classic" % "1.5.6",
-    ),
+    )
   )
