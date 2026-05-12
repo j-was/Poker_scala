@@ -11,7 +11,7 @@ lazy val root = project
 
     scalaVersion := scala3Version,
 
-    enablePlugins(JavaAppPackaging),
+    // enablePlugins(JavaAppPackaging),
 
     Compile / scalacOptions ++= Seq(
       "-explain-cyclic",
