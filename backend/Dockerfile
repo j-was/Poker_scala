@@ -10,7 +10,8 @@ RUN sbt update
 
 # Copy source code
 COPY src/ ./src/
-RUN sbt assembly
+RUN sbt assembly && \
+    mv /target/scala-3.8.3/scala-poker-assembly-0.1.0-SNAPSHOT.jar app.jar
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
