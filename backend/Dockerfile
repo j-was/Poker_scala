@@ -1,9 +1,9 @@
 FROM sbtscala/scala-sbt:eclipse-temurin-17.0.14_7_1.10.11_3.6.4 AS build
-WORKDIR /app
+WORKDIR /
 
 # Copy build files first for dependency caching
 COPY build.sbt ./
-COPY project/ ./project/
+COPY backend/ ./project/
 RUN sbt update
 
 # Copy source code
@@ -17,7 +17,7 @@ RUN apk add --no-cache curl
 RUN addgroup -S poker && adduser -S poker -G poker
 
 # Copy the assembled JAR
-COPY --from=build /app/target/scala-*/scala-poker-assembly-*.jar ./app.jar
+COPY--from=build /app/app.jar ./app.jar
 
 USER poker
 EXPOSE 8080
