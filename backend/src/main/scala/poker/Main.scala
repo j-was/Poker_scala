@@ -15,6 +15,7 @@ import scala.concurrent.ExecutionContext
  *   POKER_PORT  – bind port    (default: 8080)
  */
 object Main {
+  def main(args: Array[String]): Unit = {
 
   val host = sys.env.getOrElse("POKER_HOST", "0.0.0.0");
   val port = sys.env.get("POKER_PORT").flatMap(_.toIntOption).getOrElse(8080);
@@ -43,5 +44,6 @@ object Main {
     system.terminate()
   }
 
-  Thread.currentThread().join();
+    Thread.currentThread().join();
+  }
 }
