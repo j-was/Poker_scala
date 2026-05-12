@@ -5,6 +5,7 @@ App to play poker with your friends. Power up the desktop client and create a ne
 Public games soon to come...
 
 This project is being developed for the **"Programming in Scala"** course at the Faculty of Mathematics and Information Science (MiNI), Warsaw University of Technology.
+It utilises ScalaFX framework for desktop side and Pekko for server.
 
 - [Andrzej Wrzesiński](https://github.com/ondrey-16) - desktop app
 - [Artur Szabelski](https://github.com/Artur112233) - desktop frontend
