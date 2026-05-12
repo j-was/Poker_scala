@@ -1,6 +1,6 @@
 package poker.frontend.scenes
 
-import poker.frontend.widgets.{CreateGameButton, JoinToGameButton, PokerScaleTitle}
+import poker.frontend.widgets.MainSceneWidgets.{CreateGameButton, JoinToGameButton, PokerScaleTitle}
 import scalafx.geometry.Pos
 import scalafx.scene.Scene
 import scalafx.scene.control.Button

@@ -1,4 +1,4 @@
-package poker.frontend.widgets
+package poker.frontend.widgets.MainSceneWidgets
 
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.Label
