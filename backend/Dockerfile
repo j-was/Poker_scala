@@ -1,6 +1,8 @@
 FROM sbtscala/scala-sbt:eclipse-temurin-17.0.14_7_1.10.11_3.6.4 AS build
 WORKDIR /
 
+ENV SBT_OPTS="-Dsbt.rootdir=true"
+
 # Copy build files first for dependency caching
 COPY build.sbt ./
 COPY project/ ./project/
