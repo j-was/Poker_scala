@@ -3,6 +3,15 @@ val pekkoVersion = "1.6.0"
 val pekkoHttpVersion = "1.3.0"
 val circeVersion   = "0.14.15"
 
+Compile / scalacOptions ++= Seq(
+  "-explain-cyclic",
+  "-deprecation",
+  "-feature",
+  "-unchecked"
+)
+
+Compile / mainClass := Some("poker.Main")
+
 lazy val root = project
   .in(file("."))
   .settings(
@@ -12,15 +21,6 @@ lazy val root = project
     scalaVersion := scala3Version,
 
     enablePlugins(JavaAppPackaging),
-
-    Compile / scalacOptions ++= Seq(
-      "-explain-cyclic",
-      "-deprecation",
-      "-feature",
-      "-unchecked"
-    ),
-
-    Compile / mainClass := Some("poker.Main"),
 
     libraryDependencies ++= Seq(
       "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
