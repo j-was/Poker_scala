@@ -1,6 +1,6 @@
 package poker.frontend
 
-import poker.frontend.scenes.{MainScene, JoinGame}
+import poker.frontend.scenes.{MainScene, JoinGame, CreateGame, WaitingRoom}
 import scalafx.application.JFXApp3
 
 object ScenesNavigator
@@ -15,5 +15,15 @@ object ScenesNavigator
   def showJoinGame(): Unit =
     {
       mainStage.scene = JoinGame()
+    }
+
+  def showCreateGame(): Unit =
+    {
+      mainStage.scene = CreateGame()
+    }
+
+  def showWaitingRoom(): Unit =
+    {
+      mainStage.scene = WaitingRoom()
     }
 }
