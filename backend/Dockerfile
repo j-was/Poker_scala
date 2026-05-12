@@ -17,7 +17,7 @@ RUN apk add --no-cache curl
 RUN addgroup -S poker && adduser -S poker -G poker
 
 # Copy the assembled JAR
-COPY--from=build /app/app.jar ./app.jar
+COPY --from=build /app/app.jar ./app.jar
 
 USER poker
 EXPOSE 8080
