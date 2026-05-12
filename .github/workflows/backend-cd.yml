@@ -30,7 +30,7 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ${{ github.workspace }}/backend
-          dockerfilePath: backend/Dockerfile
+          dockerfilePath: Dockerfile
           registryUrl: docker.io
           registryUsername: ${{ secrets.SCALAPOKER_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.SCALAPOKER_REGISTRY_PASSWORD }}
