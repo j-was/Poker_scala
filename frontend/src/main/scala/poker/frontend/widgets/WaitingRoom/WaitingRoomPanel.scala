@@ -1,5 +1,6 @@
 package poker.frontend.widgets.WaitingRoom
 
+import poker.frontend.client.PokerSession
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.{Label, ListCell, ListView}
@@ -10,6 +11,10 @@ case class Player(nick: String, isReady: Boolean)
 
 object WaitingRoomPanel {
   def apply(): VBox = {
+    val current = PokerSession.currentView
+    val code = current.map(_._1).getOrElse("-")
+    val myPlayerId = current.map(_._2).getOrElse("")
+    val state = current.map(_._3)
     new VBox {
       alignment = Pos.TopCenter
       spacing = 30
@@ -27,8 +32,8 @@ object WaitingRoomPanel {
         spacing = 40
         style = "-fx-background-color: #1a1a1a; -fx-padding: 15; -fx-background-radius: 10;"
         children = Seq(
-          createHeaderInfo("ID Pokoju:", "123456"),
-          createHeaderInfo("Hasło:", "poker123"),
+          createHeaderInfo("ID Pokoju:", code),
+          createHeaderInfo("Hasło:", "-"),
           createHeaderInfo("Typ:", "Prywatny")
         )
       }
@@ -42,15 +47,15 @@ object WaitingRoomPanel {
           spacing = 10
           hgrow = Priority.Always
 
-          val playersCountLabel = new Label("Gracze (3 / 6)") {
-            style = "-fx-text-fill: #aaaaaa; -fx-font-size: 18px;"
-          }
+          val playersCountLabel = new Label(s"Gracze (${state.map(_.players.size).getOrElse(0)})")
 
-          val playersList = new ListView[Player](ObservableBuffer(
-            Player("MistrzPokerowy", true),
-            Player("Gacz_123", false),
-            Player("Janusz_AllIn", true)
-          )) {
+          val playersList = new ListView[Player](
+            ObservableBuffer.from(
+              state.toList.flatMap(_.players).map { p =>
+                Player(p.name + (if p.id == myPlayerId then " (Ty)" else ""), true)
+              }
+            )
+          ) {
             vgrow = Priority.Always
             style = "-fx-background-color: #1a1a1a; -fx-background-radius: 10; -fx-padding: 5;"
             cellFactory = (lv: ListView[Player]) => new ListCell[Player] {
@@ -87,9 +92,9 @@ object WaitingRoomPanel {
 
           children = Seq(
             new Label("USTAWIENIA") { style = "-fx-text-fill: #4f9a3a; -fx-font-weight: bold; -fx-font-size: 20px;" },
-            createSettingRow("Wpisowe:", "1000 $"),
-            createSettingRow("Small Blind:", "10 $"),
-            createSettingRow("Big Blind:", "20 $")
+            createSettingRow("Wpisowe:", state.map(s => s"${s.settings.initialChips}$$").getOrElse("-")),
+            createSettingRow("Small Blind:", state.map(s => s"${s.settings.smallBlind}$$").getOrElse("-")),
+            createSettingRow("Big Blind:", state.map(s => s"${s.settings.bigBlind}$$").getOrElse("-")),
           )
         }
 
@@ -99,7 +104,7 @@ object WaitingRoomPanel {
       val spacer = new Region { vgrow = Priority.Always }
       val footer = new HBox {
         alignment = Pos.BottomRight
-        children = Seq(ReadyButton(() => println("Zgłoszono gotowość!")))
+        children = Seq(ReadyButton(() => PokerSession.startGame()))
       }
 
       children = Seq(roomInfoRow, contentRow, spacer, footer)

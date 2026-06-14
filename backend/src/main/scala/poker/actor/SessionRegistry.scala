@@ -23,6 +23,8 @@ object SessionRegistry {
   case class LeftGame(playerId: String, gameCode: String) extends Command
 
   case class SendTo(playerId: String, msg: ServerMessage) extends Command
+  case class GetJoinedGame(playerId: String, replyTo: ActorRef[JoinedGameResult]) extends Command
+  case class JoinedGameResult(code: Option[String])
 
   case class BroadcastToGame(
                               gameCode: String,
@@ -31,6 +33,8 @@ object SessionRegistry {
                             ) extends Command
 
   case class BroadcastRaw(gameCode: String, msg: ServerMessage) extends Command
+  case class BroadcastRawExcept(gameCode: String, exceptPlayerId: String, msg: ServerMessage)
+    extends Command
 
   case class IsConnectedResult(connected: Boolean)
 
@@ -47,13 +51,16 @@ object SessionRegistry {
     case Register(playerId, sender) =>
       registry(sessions + (playerId -> sender), playerGame)
     case Unregister(playerId) =>
-      registry(sessions - playerId, playerGame - playerId)
+      registry(sessions - playerId, playerGame)
     case JoinedGame(playerId, gameCode) =>
       registry(sessions, playerGame + (playerId -> gameCode))
     case LeftGame(playerId, _) =>
       registry(sessions, playerGame - playerId)
     case SendTo(playerId, msg) =>
       sessions.get(playerId).foreach(_ ! msg)
+      Behaviors.same
+    case GetJoinedGame(playerId, replyTo) =>
+      replyTo ! JoinedGameResult(playerGame.get(playerId))
       Behaviors.same
     case BroadcastToGame(gameCode, gameState, buildMsg) =>
       val playersInGame = playerGame.collect { case (pid, code) if code == gameCode => pid }
@@ -65,6 +72,12 @@ object SessionRegistry {
       Behaviors.same
     case BroadcastRaw(gameCode, msg) =>
       val playersInGame = playerGame.collect { case (pid, code) if code == gameCode => pid }
+      playersInGame.foreach { pid => sessions.get(pid).foreach(_ ! msg) }
+      Behaviors.same
+    case BroadcastRawExcept(gameCode, exceptPlayerId, msg) =>
+      val playersInGame = playerGame.collect {
+        case (pid, code) if code == gameCode && pid != exceptPlayerId => pid
+      }
       playersInGame.foreach { pid => sessions.get(pid).foreach(_ ! msg) }
       Behaviors.same
     case IsConnected(playerId, replyTo) =>
