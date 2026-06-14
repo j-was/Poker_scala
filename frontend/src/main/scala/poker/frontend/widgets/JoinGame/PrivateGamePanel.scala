@@ -5,7 +5,7 @@ import poker.frontend.client.PokerSession
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.{Button, Label, TextField}
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
-import poker.frontend.widgets.Shared.JoinButton
+import poker.frontend.widgets.Shared.{JoinButton, ErrorDialog}
 
 object PrivateGamePanel {
   def apply(): VBox = {
@@ -90,7 +90,8 @@ object PrivateGamePanel {
           JoinButton(() => {
             PokerSession.configure(
               name = usernameField.text.value,
-              stateHandler = ScenesNavigator.showServerState
+              stateHandler = ScenesNavigator.showServerState,
+              errorHandler = msg => ErrorDialog.show(msg)
             )
 
             PokerSession.joinGame(codeField.text.value)

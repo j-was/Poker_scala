@@ -7,6 +7,7 @@ import scalafx.scene.layout.{HBox, Priority, Region, VBox}
 import poker.frontend.widgets.JoinGame.GameModeToggle
 import poker.frontend.ScenesNavigator
 import poker.frontend.client.PokerSession
+import poker.frontend.widgets.Shared.{ErrorDialog}
 
 object CreateGamePanel {
   def apply(): VBox = {
@@ -119,7 +120,8 @@ object CreateGamePanel {
         {
           PokerSession.configure(
             name = playerNameField.text.value,
-            stateHandler = ScenesNavigator.showServerState
+            stateHandler = ScenesNavigator.showServerState,
+            errorHandler = msg => ErrorDialog.show(msg)
           )
 
           PokerSession.createGame(GameSettings(
