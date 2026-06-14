@@ -1,5 +1,7 @@
 package poker.frontend.widgets.JoinGame
 
+import poker.frontend.ScenesNavigator
+import poker.frontend.client.PokerSession
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.{Button, Label, TextField}
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
@@ -20,6 +22,12 @@ object PrivateGamePanel {
           -fx-border-radius: 20;
         """
 
+      val usernameField = new TextField {
+        promptText = "Wpisz nazwę"
+        prefWidth = 320
+        style = "-fx-font-size: 20px;"
+      }
+
       val usernameRow = new HBox {
         alignment = Pos.CenterRight
         spacing = 15
@@ -30,12 +38,14 @@ object PrivateGamePanel {
             prefWidth = 180
             alignment = Pos.CenterRight
           },
-          new TextField {
-            promptText = "Wpisz nazwę"
-            prefWidth = 320
-            style = "-fx-font-size: 20px;"
-          }
+          usernameField
         )
+      }
+
+      val codeField = new TextField {
+        promptText = "Wpisz ID pokoju"
+        prefWidth = 320
+        style = "-fx-font-size: 20px;"
       }
 
       val idRow = new HBox {
@@ -48,11 +58,7 @@ object PrivateGamePanel {
             prefWidth = 180
             alignment = Pos.CenterRight
           },
-          new TextField {
-            promptText = "Wpisz ID pokoju"
-            prefWidth = 320
-            style = "-fx-font-size: 20px;"
-          }
+          codeField
         )
       }
 
@@ -82,7 +88,12 @@ object PrivateGamePanel {
         alignment = Pos.BottomRight
         children = Seq(
           JoinButton(() => {
+            PokerSession.configure(
+              name = usernameField.text.value,
+              stateHandler = ScenesNavigator.showServerState
+            )
 
+            PokerSession.joinGame(codeField.text.value)
           })
         )
       }

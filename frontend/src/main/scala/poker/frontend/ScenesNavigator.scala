@@ -6,7 +6,6 @@ import scalafx.application.JFXApp3
 
 object ScenesNavigator
 {
-//  _ to deklaracja pusta, wstawia wartośc domyślną
   var mainStage: JFXApp3.PrimaryStage = _
 
   def showMainStage(): Unit =
@@ -37,13 +36,23 @@ object ScenesNavigator
       code = code,
       myPlayerId = myPlayerId,
       state = state,
-      onFold = () => (),
-      onCall = () => (),
-      onCheck = () => (),
-      onRaise = _ => (),
-      onStartGame = () => (),
-      onLeave = () => showMainStage()
+      onFold = () => poker.frontend.client.PokerSession.fold(),
+      onCall = () => poker.frontend.client.PokerSession.call(),
+      onCheck = () => poker.frontend.client.PokerSession.check(),
+      onRaise = amount => poker.frontend.client.PokerSession.raise(amount),
+      onStartGame = () => poker.frontend.client.PokerSession.startGame(),
+      onLeave = () => {
+        poker.frontend.client.PokerSession.leaveGame()
+        showMainStage()
+      }
     )
+  }
+  
+  def showServerState(code: String, myPlayerId: String, state: ClientGameState): Unit = {
+    if state.status == poker.domain.GameStatus.WaitingForPlayers then
+      mainStage.scene = WaitingRoom()
+    else
+      showGameScene(code, myPlayerId, state)
   }
 
   def showMockGameScene(): Unit = {

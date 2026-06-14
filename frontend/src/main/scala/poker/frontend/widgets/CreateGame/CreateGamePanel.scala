@@ -1,11 +1,12 @@
 package poker.frontend.widgets.CreateGame
 
+import poker.domain.GameSettings
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.{Label, Slider, TextField, ToggleGroup}
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
 import poker.frontend.widgets.JoinGame.GameModeToggle
-import poker.frontend.widgets.CreateGame.CreateButton
 import poker.frontend.ScenesNavigator
+import poker.frontend.client.PokerSession
 
 object CreateGamePanel {
   def apply(): VBox = {
@@ -24,6 +25,12 @@ object CreateGamePanel {
 
       val modeGroup = new ToggleGroup()
       val modeToggle = GameModeToggle(modeGroup, () => {}, () => {})
+
+      val playerNameField = new TextField {
+        promptText = "Nazwa gracza"
+        prefWidth = 320
+        style = "-fx-font-size: 18px"
+      }
 
       def createSliderRow(labelStr: String, minVal: Int, maxVal: Int, initialVal: Int): (HBox, Slider) = {
         val valueLabel = new Label(labelStr) {
@@ -110,7 +117,16 @@ object CreateGamePanel {
         alignment = Pos.BottomRight
         children = Seq(CreateButton(() =>
         {
-          ScenesNavigator.showWaitingRoom()
+          PokerSession.configure(
+            name = playerNameField.text.value,
+            stateHandler = ScenesNavigator.showServerState
+          )
+
+          PokerSession.createGame(GameSettings(
+            smallBlind = smallBlindSlider.value.value.toInt,
+            bigBlind = bigBlindSlider.value.value.toInt,
+            initialChips = buyInSlider.value.value.toInt
+          ))
         }))
       }
 
@@ -118,6 +134,7 @@ object CreateGamePanel {
         new Label("Ustawienia Nowej Gry") {
           style = "-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;"
         },
+        playerNameField,
         modeToggle,
         maxPlayersRow,
         buyInRow,
