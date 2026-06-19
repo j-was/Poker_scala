@@ -5,7 +5,7 @@ import scalafx.scene.layout.HBox
 
 object GameModeToggle {
   def apply(modeGroup: ToggleGroup, onPrivate: () => Unit, onPublic: () => Unit): HBox = {
-    val radioStyle = "-fx-text-fill: white; -fx-font-size: 18px; -fx-cursor: hand;"
+    val radioStyle = "-fx-text-fill: white; -fx-font-size: 20px; -fx-cursor: hand; -fx-font-weight: bold;"
 
     val privateBtn = new RadioButton("Prywatne") {
       toggleGroup = modeGroup
@@ -21,7 +21,7 @@ object GameModeToggle {
     }
 
     new HBox {
-      spacing = 20
+      spacing = 25
       children = Seq(privateBtn, publicBtn)
     }
   }
