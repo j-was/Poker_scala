@@ -9,18 +9,23 @@ import poker.frontend.widgets.Shared.ReturnButton
 object WaitingRoom {
   def apply(): Scene = {
     new Scene {
-      root = new BorderPane {
-        style = "-fx-background-color: #4f9a3a;"
-        padding = Insets(20)
+      root = new StackPane {
+        style = "-fx-background-color: radial-gradient(center 50% 50%, radius 70%, #2e7d32, #1b5e20);"
 
-        top = new BorderPane {
-          left = ReturnButton()
+        val mainContent = new BorderPane {
+          padding = Insets(20)
+
+          top = new BorderPane {
+            left = ReturnButton()
+          }
+
+          center = new StackPane {
+            padding = Insets(40, 80, 40, 80)
+            children = Seq(WaitingRoomPanel())
+          }
         }
 
-        center = new StackPane {
-          padding = Insets(40, 80, 40, 80)
-          children = Seq(WaitingRoomPanel())
-        }
+        children = Seq(mainContent)
       }
     }
   }
