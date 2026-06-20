@@ -6,8 +6,6 @@ A full-stack poker application built in Scala. Features a desktop client made wi
 
 Developed for the **"Programming in Scala"** course at the **Faculty of Mathematics and Information Science (MiNI)**, Warsaw University of Technology.
 
----
-
 ## Team
 
 | Member | Role |
@@ -16,8 +14,6 @@ Developed for the **"Programming in Scala"** course at the **Faculty of Mathemat
 | [Artur Szabelski](https://github.com/Artur112233) | Desktop frontend |
 | [Fryderyk Wolny](https://github.com/Frycek1) | Poker engine |
 | [Jerzy Wąsiewicz](https://github.com/j-was) | Backend server |
-
----
 
 ## Features
 
