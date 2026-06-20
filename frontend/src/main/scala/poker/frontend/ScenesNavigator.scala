@@ -49,11 +49,9 @@ object ScenesNavigator
   }
   
   def showServerState(code: String, myPlayerId: String, state: ClientGameState): Unit = {
-    println(s"Status: ${state.status}")
     if state.status == poker.domain.GameStatus.WaitingForPlayers then
       mainStage.scene = WaitingRoom()
     else
-      println("Ladowanie GameScene")
       showGameScene(code, myPlayerId, state)
   }
 

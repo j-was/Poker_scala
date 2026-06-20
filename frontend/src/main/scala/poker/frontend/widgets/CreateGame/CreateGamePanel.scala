@@ -76,6 +76,20 @@ object CreateGamePanel {
           """
       }
 
+      val customRoomName = new TextField {
+        promptText = "Podaj nazwe swojego pokoju (nie wymagane)"
+        prefWidth = 320
+        style =
+          """
+                  -fx-font-size: 18px;
+                  -fx-background-color: rgba(255, 255, 255, 0.9);
+                  -fx-background-radius: 10;
+                  -fx-border-radius: 10;
+                  -fx-border-color: #d4af37;
+                  -fx-border-width: 2;
+                """
+      }
+
       def createSliderRow(labelStr: String, minVal: Int, maxVal: Int, initialVal: Int): (HBox, Slider) = {
         val valueLabel = new Label(labelStr) {
           style = "-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;"
@@ -137,7 +151,7 @@ object CreateGamePanel {
         (row, slider)
       }
 
-//      val (maxPlayersRow, _) = createSliderRow("Max graczy:", 4, 10, 6)
+      val (maxPlayersRow, _) = createSliderRow("Max graczy:", 4, 10, 6)
       val (buyInRow, buyInSlider) = createSliderRow("Wpisowe ($):", 100, 10000, 1000)
       val (smallBlindRow, smallBlindSlider) = createSliderRow("Small Blind:", 5, 500, 10)
       val (bigBlindRow, bigBlindSlider) = createSliderRow("Big Blind:", 10, 1000, 20)
@@ -186,8 +200,9 @@ object CreateGamePanel {
       children = Seq(
         titleRow,
         playerNameField,
+        customRoomName,
         modeToggle,
-//        maxPlayersRow,
+        maxPlayersRow,
         buyInRow,
         smallBlindRow,
         bigBlindRow,
