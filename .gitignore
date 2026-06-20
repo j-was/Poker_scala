@@ -10,3 +10,8 @@ Thumbs.db
 node_modules/
 dist/
 .env
+
+# Scala / Metals / Bloop
+.metals/
+.bloop/
+.bsp/
