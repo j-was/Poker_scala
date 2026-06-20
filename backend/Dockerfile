@@ -1,23 +1,26 @@
-FROM sbtscala/scala-sbt:eclipse-temurin-17.0.14_7_1.10.11_3.6.4 AS build
-WORKDIR /
+FROM sbtscala/scala-sbt:eclipse-temurin-21_1.x AS build
 
-# Copy build files first for dependency caching
-COPY build.sbt ./
-COPY backend/ ./project/
-RUN sbt update
+WORKDIR /build
 
-# Copy source code
-COPY src/ ./src/
-RUN sbt assembly
+COPY . .
 
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
+# Fix the assembly merge strategy without modifying app files
+RUN echo '\n\
+    assembly / assemblyMergeStrategy := { \n\
+    case "module-info.class" => MergeStrategy.discard \n\
+    case x => \n\
+    val oldStrategy = (assembly / assemblyMergeStrategy).value \n\
+    oldStrategy(x) \n\
+    }' >> build.sbt && sbt assembly
+
+FROM eclipse-temurin:21-jre-alpine
 
 RUN apk add --no-cache curl
 RUN addgroup -S poker && adduser -S poker -G poker
 
-# Copy the assembled JAR
-COPY --from=build /app/app.jar ./app.jar
+WORKDIR /app
+
+COPY --from=build /build/target/scala-3.8.3/scala-poker-assembly-0.1.0-SNAPSHOT.jar ./app.jar
 
 USER poker
 EXPOSE 8080

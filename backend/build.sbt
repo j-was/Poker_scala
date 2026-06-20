@@ -19,32 +19,25 @@ lazy val root = project
     version := "0.1.0-SNAPSHOT",
 
     scalaVersion := scala3Version,
-
-    // REMOVED: enablePlugins(JavaAppPackaging) - not needed with assembly
-
+    
     libraryDependencies ++= Seq(
-      // Testing
       "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
       "org.apache.pekko" %% "pekko-actor-testkit-typed" % pekkoVersion % Test,
       "org.scalatest" %% "scalatest" % "3.2.17" % Test,
-
-      // Pekko (actor system)
+      
       "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
       "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
       "org.apache.pekko" %% "pekko-stream-typed" % pekkoVersion,
       "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
-
-      // Pekko HTTP (WebSocket server)
+      
       "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion,
       "org.apache.pekko" %% "pekko-http-spray-json" % pekkoHttpVersion,
       "org.apache.pekko" %% "pekko-http-core" % pekkoHttpVersion,
-
-      // JSON (circe)
+      
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
-
-      // Logging
+      
       "ch.qos.logback" % "logback-classic" % "1.5.6",
     )
   )
