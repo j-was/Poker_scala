@@ -27,5 +27,6 @@ Developed for the **"Programming in Scala"** course at the **Faculty of Mathemat
 
 ## API
 
-Full API documentation: [`api.md`](./docs/api.md)
-Engine usage guide: [`engine.md`](./docs/engine.md)
+**Full API documentation**: [`api.md`](./docs/api.md)
+
+**Engine usage guide**: [`engine.md`](./docs/engine.md)
