@@ -32,8 +32,7 @@ lazy val root = project
       "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
       "org.apache.pekko" %% "pekko-actor-testkit-typed" % pekkoVersion % Test,
       "org.scalatest" %% "scalatest" % "3.2.17" % Test,
-      
-      "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
+
       "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
       "org.apache.pekko" %% "pekko-stream-typed" % pekkoVersion,
       "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
