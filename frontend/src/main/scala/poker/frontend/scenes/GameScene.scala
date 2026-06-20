@@ -20,8 +20,12 @@ object GameScene {
      onLeave: () => Unit = () => ()
   ) : Scene = {
     new Scene {
+      stylesheets = Seq(
+        getClass.getResource("/poker/frontend/styles/game-scene.css").toExternalForm
+      )
+
       root = new BorderPane {
-        style = "-fx-background-color: #235b32;"
+        styleClass += "game-root"
         padding = Insets(20)
 
         top = infoBar(code, state, onLeave)
@@ -44,7 +48,7 @@ object GameScene {
         label(s"Najwyższy zakład: ${state.currentHighestBet}", 18),
         spacer(),
         new Button("Opuść") {
-          style = buttonStyle("#8b2f2f")
+          withHoverStyle(this, "#8b2f2f", "#a03a3a")
           onAction = _ => onLeave()
         }
       )
@@ -90,12 +94,10 @@ object GameScene {
       padding = Insets(14)
       prefWidth = 190
 
-      style = s"""
-           -fx-background-color: #2b2b2b;
-           -fx-background-radius: 10;
-           -fx-border-color: $borderColor;
-           -fx-border-width: 3;
-           -fx-border-radius: 10;
+      styleClass += "player-seat"
+      style =
+        s"""
+           border-color: $borderColor
         """
 
       children = Seq(
@@ -187,7 +189,7 @@ object GameScene {
       promptText = "Raise"
       prefWidth = 100
       disable = !isMyTurn
-      style = "-fx-font-size: 16px;"
+      styleClass += "-raise-input"
     }
 
     new HBox {
@@ -197,30 +199,30 @@ object GameScene {
       children = Seq(
         new Button("Fold") {
           disable = !isMyTurn
-          style = buttonStyle("#7a2d2d")
+          withHoverStyle(this, "#7a2d2d", "#8f3939")
           onAction = _ => onFold()
         },
         new Button("Check") {
           disable = !isMyTurn
-          style = buttonStyle("#2f5f8f")
+          withHoverStyle(this, "#2f5f8f", "#3b70a5")
           onAction = _ => onCheck()
         },
         new Button("Call") {
           disable = !isMyTurn
-          style = buttonStyle("#2f7a4f")
+          withHoverStyle(this, "#2f7a4f", "#3a8d5e")
           onAction = _ => onCall()
         },
         raiseInput,
         new Button("Raise") {
           disable = !isMyTurn
-          style = buttonStyle("#8a6a20")
+          withHoverStyle(this, "#8a6a20", "#9f7b2a")
           onAction = _ => {
             raiseInput.text.value.toIntOption.foreach(onRaise)
           }
         },
         new Button("Start") {
           disable = state.status == GameStatus.Playing
-          style = buttonStyle("#4f7f3f")
+          withHoverStyle(this, "#4f7f3f", "#5f934c")
           onAction = _ => onStartGame()
         }
       )
@@ -228,28 +230,31 @@ object GameScene {
   }
 
   private def cardView(card: Card): StackPane = {
-    val red =
-      card.suit == Suit.Hearts || card.suit == Suit.Diamonds
+    val red = card.suit == Suit.Hearts || card.suit == Suit.Diamonds
+    val textColor = if red then Color.DarkRed else Color.Black
 
     new StackPane {
       prefWidth = 72
       prefHeight = 104
       maxWidth = 72
       maxHeight = 104
-
-      style =
-        """
-              -fx-background-color: white;
-              -fx-background-radius: 8;
-              -fx-border-color: #111111;
-              -fx-border-width: 2;
-              -fx-border-radius: 8;
-            """
-
+      styleClass += "card"
       children = Seq(
-        new Label(card.toString) {
-          textFill = if red then Color.DarkRed else Color.Black
-          style = "-fx-font-size: 26px; -fx-font-weight: bold;"
+        new Label(s"${card.rank}\n${card.suit}") {
+          textFill = textColor
+          styleClass += "card-top"
+          StackPane.setAlignment(this, Pos.TopLeft)
+          StackPane.setMargin(this, Insets(6, 0, 0, 7))
+        },
+        new Label(card.suit.toString) {
+          textFill = textColor
+          styleClass += "card-middle"
+        },
+        new Label(s"${card.rank}\n${card.suit}") {
+          textFill = textColor
+          styleClass += "card-bottom"
+          StackPane.setAlignment(this, Pos.BottomRight)
+          StackPane.setMargin(this, Insets(0, 7, 6, 0))
         }
       )
     }
@@ -272,15 +277,13 @@ object GameScene {
       prefHeight = 48
       maxWidth = 34
       maxHeight = 48
-
-      style =
-        """
-              -fx-background-color: #1d3f73;
-              -fx-background-radius: 5;
-              -fx-border-color: white;
-              -fx-border-width: 1;
-              -fx-border-radius: 5;
-            """
+      styleClass += "card-back"
+      children = Seq(
+        new Label("◆") {
+          textFill = Color.White
+          styleClass += "card-back-text"
+        }
+      )
     }
   }
 
@@ -289,9 +292,9 @@ object GameScene {
       textFill = Color.White
       style =
         s"""
-               -fx-font-size: ${size}px;
-               ${if bold then "-fx-font-weight: bold;" else ""}
-            """
+           -fx-font-size: ${size}px;
+           ${if bold then "-fx-font-weight: bold;" else ""}
+        """
     }
   }
 
@@ -301,14 +304,12 @@ object GameScene {
     }
   }
 
-  private def buttonStyle(color: String): String =
-    s"""
-           -fx-background-color: $color;
-           -fx-text-fill: white;
-           -fx-font-size: 16px;
-           -fx-font-weight: bold;
-           -fx-background-radius: 8;
-           -fx-cursor: hand;
-           -fx-padding: 8 16 8 16;
-        """
+  private def withHoverStyle(button: Button, normalColor: String, hoverColor: String): Unit = {
+    button.styleClass += "game-button"
+    button.style =
+      s"""
+          -poker-button-color: $normalColor;
+          -poker-button-hover-color: $hoverColor;
+       """
+  }
 }
