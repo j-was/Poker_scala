@@ -107,23 +107,23 @@ object PrivateGamePanel {
         )
       }
 
-      val passwordRow = new HBox {
-        alignment = Pos.CenterRight
-        spacing = 15
-        maxWidth = 500
-        children = Seq(
-          new Label("Hasło:") {
-            style = "-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"
-            prefWidth = 180
-            alignment = Pos.CenterRight
-          },
-          new TextField {
-            promptText = "Wpisz hasło"
-            prefWidth = 320
-            style = inputStyle
-          }
-        )
-      }
+//      val passwordRow = new HBox {
+//        alignment = Pos.CenterRight
+//        spacing = 15
+//        maxWidth = 500
+//        children = Seq(
+//          new Label("Hasło:") {
+//            style = "-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"
+//            prefWidth = 180
+//            alignment = Pos.CenterRight
+//          },
+//          new TextField {
+//            promptText = "Wpisz hasło"
+//            prefWidth = 320
+//            style = inputStyle
+//          }
+//        )
+//      }
 
       val spacer = new Region {
         vgrow = Priority.Always
@@ -144,7 +144,7 @@ object PrivateGamePanel {
         )
       }
 
-      children = Seq(titleRow, usernameRow, idRow, passwordRow, spacer, buttonRow)
+      children = Seq(titleRow, usernameRow, idRow, spacer, buttonRow)
     }
   }
 }

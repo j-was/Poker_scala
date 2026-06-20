@@ -77,7 +77,6 @@ object WaitingRoomPanel {
           """
         children = Seq(
           createHeaderInfo("ID Pokoju:", code),
-          createHeaderInfo("Hasło:", "-"),
           createHeaderInfo("Typ:", "Prywatny")
         )
       }

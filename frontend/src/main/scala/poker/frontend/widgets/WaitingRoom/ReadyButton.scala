@@ -31,7 +31,7 @@ object ReadyButton {
          -fx-cursor: hand;
       """
 
-    val btn = new Button("Gotowy") {
+    val btn = new Button("Rozpocznij") {
       style = baseStyle
       prefWidth = 200
       prefHeight = 50

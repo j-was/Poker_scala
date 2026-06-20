@@ -137,7 +137,7 @@ object CreateGamePanel {
         (row, slider)
       }
 
-      val (maxPlayersRow, _) = createSliderRow("Max graczy:", 4, 10, 6)
+//      val (maxPlayersRow, _) = createSliderRow("Max graczy:", 4, 10, 6)
       val (buyInRow, buyInSlider) = createSliderRow("Wpisowe ($):", 100, 10000, 1000)
       val (smallBlindRow, smallBlindSlider) = createSliderRow("Small Blind:", 5, 500, 10)
       val (bigBlindRow, bigBlindSlider) = createSliderRow("Big Blind:", 10, 1000, 20)
@@ -187,7 +187,7 @@ object CreateGamePanel {
         titleRow,
         playerNameField,
         modeToggle,
-        maxPlayersRow,
+//        maxPlayersRow,
         buyInRow,
         smallBlindRow,
         bigBlindRow,
