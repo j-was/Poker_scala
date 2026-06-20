@@ -1,7 +1,7 @@
 package poker.frontend
 
 import poker.domain.*
-import poker.frontend.scenes.{CreateGame, GameScene, JoinGame, MainScene, WaitingRoom}
+import poker.frontend.scenes.{CreateGame, Game, JoinGame, MainScene, WaitingRoom}
 import scalafx.application.JFXApp3
 
 object ScenesNavigator
@@ -32,7 +32,7 @@ object ScenesNavigator
                      myPlayerId: String,
                      state: ClientGameState
                    ): Unit = {
-    mainStage.scene = GameScene(
+    mainStage.scene = Game(
       code = code,
       myPlayerId = myPlayerId,
       state = state,
