@@ -64,9 +64,7 @@ object WebSocketServer {
         done.onComplete(_ => connectionActor ! ClientConnection.ConnectionClosed)
       }
   }
-
-
-  /** Start the HTTP server and bind to host:port. */
+  
   def start(
              host: String,
              port: Int,
