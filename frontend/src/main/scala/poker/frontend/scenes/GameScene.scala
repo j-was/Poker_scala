@@ -20,9 +20,7 @@ object GameScene {
      onLeave: () => Unit = () => ()
   ) : Scene = {
     new Scene {
-      stylesheets = Seq(
-        getClass.getResource("/poker/frontend/styles/game-scene.css").toExternalForm
-      )
+      stylesheets = Seq(new java.io.File("src/main/scala/poker/frontend/styles/game-scene.css").toURI.toString)
 
       root = new BorderPane {
         styleClass += "game-root"

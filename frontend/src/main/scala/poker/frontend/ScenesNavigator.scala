@@ -1,6 +1,6 @@
 package poker.frontend
 
-import poker.domain.ClientGameState
+import poker.domain.*
 import poker.frontend.scenes.{CreateGame, GameScene, JoinGame, MainScene, WaitingRoom}
 import scalafx.application.JFXApp3
 
@@ -49,9 +49,11 @@ object ScenesNavigator
   }
   
   def showServerState(code: String, myPlayerId: String, state: ClientGameState): Unit = {
+    println(s"Status: ${state.status}")
     if state.status == poker.domain.GameStatus.WaitingForPlayers then
       mainStage.scene = WaitingRoom()
     else
+      println("Ladowanie GameScene")
       showGameScene(code, myPlayerId, state)
   }
 
