@@ -1,0 +1,100 @@
+.join-game-scene {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 70%, #2e7d32, #1b5e20);
+}
+
+.game-mode-toggle {
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+
+.join-button {
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2px;
+    -fx-border-radius: 30px;
+    -fx-background-radius: 30px;
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.join-button:hover {
+    -fx-background-color: rgba(212, 175, 55, 0.4);
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2px;
+    -fx-border-radius: 30px;
+    -fx-background-radius: 30px;
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.private-game-panel {
+    -fx-background-color: rgba(0, 0, 0, 0.85);
+    -fx-background-radius: 20;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 3;
+    -fx-border-radius: 20;
+}
+
+.private-game-panel-title {
+    -fx-text-fill: white;
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Noto Serif Display", serif;
+}
+
+.private-game-panel-input {
+    -fx-font-size: 20px;
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2;
+}
+
+.private-game-panel-row-label {
+    -fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;
+}
+
+.public-game-panel {
+    -fx-background-color: rgba(0, 0, 0, 0.85);
+    -fx-background-radius: 20;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 3;
+    -fx-border-radius: 20;
+}
+
+.public-game-panel-title {
+    -fx-text-fill: white;
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Noto Serif Display", serif;
+}
+
+.public-game-panel-input {
+    -fx-font-size: 20px;
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2;
+}
+
+.public-game-panel-row-label {
+    -fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;
+}
+
+.private-game-panel-games-list {
+    -fx-font-size: 18px;
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-control-inner-background: transparent;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}

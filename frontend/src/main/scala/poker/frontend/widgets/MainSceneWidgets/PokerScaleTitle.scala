@@ -14,13 +14,7 @@ object PokerScaleTitle {
       children = Seq(
         new Label("Poker Scale"):
         {
-          style =
-            """
-              -fx-font-family: "Noto Serif Display", serif;
-              -fx-font-size: 56px;
-              -fx-font-weight: 700;
-              -fx-text-fill: white;
-            """
+          styleClass += "title"
         }
       )
     }

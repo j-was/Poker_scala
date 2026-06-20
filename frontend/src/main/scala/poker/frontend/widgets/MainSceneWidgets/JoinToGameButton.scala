@@ -8,15 +8,8 @@ object JoinToGameButton {
     new Button("Dołącz do gry") {
       prefWidth = 300
       prefHeight = 50
-      style = """
-           -fx-background-color: transparent;
-           -fx-border-color: transparent;
-           -fx-text-fill: white;
-           -fx-font-size: 32px;
-           -fx-font-weight: bold;
-           -fx-cursor: hand;
-        """
-        onAction = _ => ScenesNavigator.showJoinGame()
+      styleClass += "button"
+      onAction = _ => ScenesNavigator.showJoinGame()
     }
   }
 }

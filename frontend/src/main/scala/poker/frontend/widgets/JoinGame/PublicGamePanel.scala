@@ -17,14 +17,7 @@ object PublicGamePanel {
       alignment = Pos.TopCenter
       spacing = 20
       padding = Insets(40)
-      style =
-        """
-          -fx-background-color: rgba(0, 0, 0, 0.85);
-          -fx-background-radius: 20;
-          -fx-border-color: #d4af37;
-          -fx-border-width: 3;
-          -fx-border-radius: 20;
-        """
+      styleClass += "public-game-panel"
 
       val dollarsLeft = new ImageView(new Image("file:./src/main/scala/poker/frontend/Resources/dolar.png")) {
         fitWidth = 60
@@ -32,13 +25,7 @@ object PublicGamePanel {
       }
 
       val titleLabel = new Label("Dołącz do Publicznej Gry") {
-        style =
-          """
-            -fx-text-fill: white;
-            -fx-font-size: 36px;
-            -fx-font-weight: bold;
-            -fx-font-family: "Noto Serif Display", serif;
-          """
+        styleClass += "public-game-panel-title"
         effect = new DropShadow {
           color = Color.Black
           radius = 10
@@ -58,29 +45,19 @@ object PublicGamePanel {
         children = Seq(dollarsLeft, titleLabel, dollarsRight)
       }
 
-      val inputStyle =
-        """
-          -fx-font-size: 20px;
-          -fx-background-color: rgba(255, 255, 255, 0.9);
-          -fx-background-radius: 10;
-          -fx-border-radius: 10;
-          -fx-border-color: #d4af37;
-          -fx-border-width: 2;
-        """
-
       val usernameRow = new HBox {
         alignment = Pos.Center
         spacing = 15
         children = Seq(
           new Label("Nazwa gracza:") {
-            style = "-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"
+            styleClass += "public-game-panel-row-label"
             prefWidth = 170
             alignment = Pos.CenterRight
           },
           new TextField {
             promptText = "Wpisz nazwę"
             prefWidth = 400
-            style = inputStyle
+            styleClass += "public-game-panel-input"
           }
         )
       }
@@ -90,14 +67,14 @@ object PublicGamePanel {
         spacing = 15
         children = Seq(
           new Label("Szukaj:") {
-            style = "-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"
+            styleClass += "public-game-panel-row-label"
             prefWidth = 170
             alignment = Pos.CenterRight
           },
           new TextField {
             promptText = "Wpisz nazwę pokoju"
             prefWidth = 400
-            style = inputStyle
+            styleClass += "public-game-panel-input"
           }
         )
       }
@@ -110,16 +87,7 @@ object PublicGamePanel {
 
       val gamesList = new ListView[RoomInfo](mockData) {
         vgrow = Priority.Always
-        style =
-          """
-            -fx-font-size: 18px;
-            -fx-background-color: rgba(255, 255, 255, 0.1);
-            -fx-control-inner-background: transparent;
-            -fx-border-color: #d4af37;
-            -fx-border-width: 2;
-            -fx-border-radius: 10;
-            -fx-background-radius: 10;
-          """
+        styleClass += "private-game-panel-games-list"
         cellFactory = (lv: ListView[RoomInfo]) => new ListCell[RoomInfo] {
 
           def updateVisuals(room: RoomInfo, isSelected: Boolean): Unit = {

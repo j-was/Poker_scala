@@ -5,7 +5,6 @@ import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.{Label, ListCell, ListView, Slider, TextField, ToggleGroup}
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
-import poker.frontend.widgets.WaitingRoom.ReadyButton
 import poker.frontend.widgets.JoinGame.GameModeToggle
 import scalafx.scene.effect.DropShadow
 import scalafx.scene.image.{Image, ImageView}
@@ -26,13 +25,7 @@ object WaitingRoomPanel {
       alignment = Pos.TopCenter
       spacing = 30
       padding = Insets(40)
-      style = """
-          -fx-background-color: rgba(0, 0, 0, 0.85);
-          -fx-background-radius: 20;
-          -fx-border-color: #d4af37;
-          -fx-border-width: 3;
-          -fx-border-radius: 20;
-        """
+      styleClass += "waiting-room-panel"
 
       val dollarsLeft = new ImageView(new Image("file:./src/main/scala/poker/frontend/Resources/dolar.png")) {
         fitWidth = 60
@@ -40,13 +33,7 @@ object WaitingRoomPanel {
       }
 
       val titleLabel = new Label("Poczekalnia") {
-        style =
-          """
-            -fx-text-fill: white;
-            -fx-font-size: 36px;
-            -fx-font-weight: bold;
-            -fx-font-family: "Noto Serif Display", serif;
-          """
+        styleClass += "waiting-room-panel-title"
         effect = new DropShadow {
           color = Color.Black
           radius = 10
@@ -69,15 +56,7 @@ object WaitingRoomPanel {
       val roomInfoRow = new HBox {
         alignment = Pos.Center
         spacing = 40
-        style =
-          """
-            -fx-background-color: rgba(255, 255, 255, 0.1);
-            -fx-padding: 15;
-            -fx-background-radius: 10;
-            -fx-border-color: #d4af37;
-            -fx-border-width: 1;
-            -fx-border-radius: 10;
-          """
+        styleClass += "waiting-room-panel-room-info-row"
         children = Seq(
           createHeaderInfo("ID Pokoju:", code),
 //          createHeaderInfo("Typ:", state.map(s => if s.settings.isPublic then "Publiczny" else "Prywatny")
@@ -106,15 +85,7 @@ object WaitingRoomPanel {
             )
           ) {
             vgrow = Priority.Always
-            style =
-              """
-                -fx-background-color: rgba(255, 255, 255, 0.1);
-                -fx-control-inner-background: transparent;
-                -fx-border-color: #d4af37;
-                -fx-border-width: 2;
-                -fx-border-radius: 10;
-                -fx-background-radius: 10;
-              """
+            styleClass += "waiting-room-panel-players-list"
             cellFactory = (lv: ListView[Player]) => new ListCell[Player] {
               item.onChange { (_, _, p) =>
                 if (p != null) {
@@ -143,23 +114,14 @@ object WaitingRoomPanel {
 
         def createSliderRow(labelStr: String, minVal: Int, maxVal: Int, initialVal: Int): (HBox, Slider) = {
           val valueLabel = new Label(labelStr) {
-            style = "-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"
+            styleClass += "waiting-room-panel-slider-value"
             prefWidth = 90
           }
 
           val textField = new TextField {
             text = initialVal.toString
             prefWidth = 65
-            style =
-              """
-                      -fx-font-size: 12px;
-                      -fx-alignment: center;
-                      -fx-background-color: rgba(255, 255, 255, 0.9);
-                      -fx-background-radius: 5;
-                      -fx-border-radius: 5;
-                      -fx-border-color: #d4af37;
-                      -fx-border-width: 1.5;
-                    """
+            styleClass += "waiting-room-panel-slider-text-field"
           }
 
           val slider = new Slider {
@@ -169,13 +131,7 @@ object WaitingRoomPanel {
             hgrow = Priority.Always
             showTickMarks = false
             showTickLabels = false
-            style =
-              """
-                      -fx-accent: #d4af37;
-                      -fx-control-inner-background: rgba(0, 0, 0, 0.5);
-                      -fx-focus-color: transparent;
-                      -fx-faint-focus-color: transparent;
-                    """
+            styleClass += "waiting-room-panel-slider"
           }
 
           slider.value.onChange { (_, _, newVal) =>
@@ -205,15 +161,7 @@ object WaitingRoomPanel {
           spacing = 20
           prefWidth = 350
           alignment = Pos.TopLeft
-          style =
-            """
-                    -fx-background-color: rgba(255, 255, 255, 0.1);
-                    -fx-padding: 25;
-                    -fx-background-radius: 10;
-                    -fx-border-color: #d4af37;
-                    -fx-border-width: 1;
-                    -fx-border-radius: 10;
-                  """
+          styleClass += "waiting-room-panel-settings"
 
           if (isOwner) {
             val header = new Label("EDYCJA USTAWIEŃ") {
@@ -223,15 +171,7 @@ object WaitingRoomPanel {
             val roomNameField = new TextField {
               promptText = "Nazwa pokoju"
               text = "New Room Name"
-              style =
-                """
-                        -fx-font-size: 14px;
-                        -fx-background-color: rgba(255, 255, 255, 0.9);
-                        -fx-background-radius: 5;
-                        -fx-border-radius: 5;
-                        -fx-border-color: #d4af37;
-                        -fx-border-width: 1.5;
-                      """
+              styleClass += "waiting-room-panel-new-room"
             }
 
             val modeGroup = new ToggleGroup()

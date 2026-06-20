@@ -16,14 +16,7 @@ object PrivateGamePanel {
       alignment = Pos.TopCenter
       spacing = 30
       padding = Insets(50)
-      style =
-        """
-          -fx-background-color: rgba(0, 0, 0, 0.85);
-          -fx-background-radius: 20;
-          -fx-border-color: #d4af37;
-          -fx-border-width: 3;
-          -fx-border-radius: 20;
-        """
+      styleClass += "private-game-panel"
 
       val dollarsLeft = new ImageView(new Image("file:./src/main/scala/poker/frontend/Resources/dolar.png")) {
         fitWidth = 60
@@ -31,13 +24,7 @@ object PrivateGamePanel {
       }
 
       val titleLabel = new Label("Dołącz do Prywatnej Gry") {
-        style =
-          """
-            -fx-text-fill: white;
-            -fx-font-size: 36px;
-            -fx-font-weight: bold;
-            -fx-font-family: "Noto Serif Display", serif;
-          """
+        styleClass += "private-game-panel-title"
         effect = new DropShadow {
           color = Color.Black
           radius = 10
@@ -57,20 +44,10 @@ object PrivateGamePanel {
         children = Seq(dollarsLeft, titleLabel, dollarsRight)
       }
 
-      val inputStyle =
-        """
-          -fx-font-size: 20px;
-          -fx-background-color: rgba(255, 255, 255, 0.9);
-          -fx-background-radius: 10;
-          -fx-border-radius: 10;
-          -fx-border-color: #d4af37;
-          -fx-border-width: 2;
-        """
-
       val usernameField = new TextField {
         promptText = "Wpisz nazwę"
         prefWidth = 320
-        style = inputStyle
+        styleClass += "private-game-panel-input"
       }
 
       val usernameRow = new HBox {
@@ -79,7 +56,7 @@ object PrivateGamePanel {
         maxWidth = 500
         children = Seq(
           new Label("Nazwa gracza:") {
-            style = "-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"
+            styleClass += "private-game-panel-row-label"
             prefWidth = 180
             alignment = Pos.CenterRight
           },
@@ -90,7 +67,7 @@ object PrivateGamePanel {
       val codeField = new TextField {
         promptText = "Wpisz ID pokoju"
         prefWidth = 320
-        style = inputStyle
+        styleClass += "private-game-panel-input"
       }
 
       val idRow = new HBox {
@@ -99,7 +76,7 @@ object PrivateGamePanel {
         maxWidth = 500
         children = Seq(
           new Label("ID Pokoju:") {
-            style = "-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"
+            styleClass += "private-game-panel-row-label"
             prefWidth = 180
             alignment = Pos.CenterRight
           },
