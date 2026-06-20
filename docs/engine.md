@@ -70,7 +70,7 @@ def broadcastState(state: GameState): Unit =
   }
 ```
 
-`toClientView(playerId)` hides other players' cards. The requesting player gets `myHoleCards`, `myHandCategory`, and `myBestCards`. Everyone else gets `hasCards: true/false` only.
+> `toClientView(playerId)` hides other players' cards. The requesting player gets `myHoleCards`, `myHandCategory`, and `myBestCards`. Everyone else gets `hasCards: true/false` only.
 
 ---
 
