@@ -4,11 +4,9 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 import poker.domain.*
 import poker.protocol.ServerMessage
-
+import poker.protocol.ClientMessage.{ListPublicGames, UpdateSettings}
 import scala.concurrent.duration._
 import org.apache.pekko.util.Timeout
-
-implicit val timeout: Timeout = Timeout(3.seconds)
 
 
 /**
@@ -24,6 +22,7 @@ implicit val timeout: Timeout = Timeout(3.seconds)
  *     re-registers its outgoing channel, overwriting the stale one.
  */
 object ClientConnection {
+  implicit val timeout: Timeout = Timeout(3.seconds)
 
   sealed trait Command
 
@@ -35,8 +34,7 @@ object ClientConnection {
 
   private case class OnLookupResult(result: GameRegistry.LookupResult) extends Command
 
-  private case class OnJoinResult(code: String, ref: ActorRef[GameInstance.Command],
-                                  result: GameInstance.Response) extends Command
+  private case class OnJoinResult(code: String, ref: ActorRef[GameInstance.Command], result: GameInstance.Response) extends Command
 
   private case class OnCreateJoinResult(code: String, ref: ActorRef[GameInstance.Command],
                                         result: GameInstance.Response) extends Command
@@ -48,10 +46,18 @@ object ClientConnection {
   private case class OnFailure(reason: String) extends Command
 
   private case class OnRestoreGame(result: SessionRegistry.JoinedGameResult) extends Command
+
   private case class OnRestoreLookup(playerId: String, name: String,
                                      code: String, result: GameRegistry.LookupResult) extends Command
+
   private case class OnRestoredState(playerId: String, name: String,
                                      code: String, gameRef: ActorRef[GameInstance.Command], state: GameState) extends Command
+
+  private case class OnPublicGameListResult(games: List[poker.protocol.PublicGameInfo]) extends Command
+
+  private case class OnSettingsUpdated(code: String, state: GameState) extends Command
+
+  private case class OnGameNameAvailable(settings: GameSettings) extends Command
 
   def apply(
              sessionRegistry: ActorRef[SessionRegistry.Command],
@@ -66,26 +72,27 @@ object ClientConnection {
                                   gameRegistry: ActorRef[GameRegistry.Command],
                                   outgoing: ActorRef[ServerMessage]
                                 ): Behavior[Command] = Behaviors.setup {
-    ctx => Behaviors.receiveMessage {
-      case IncomingMessage(poker.protocol.ClientMessage.Identify(name, existingId)) =>
-        val playerId = existingId.getOrElse(java.util.UUID.randomUUID().toString)
-        sessionRegistry ! SessionRegistry.Register(playerId, outgoing)
-        outgoing ! ServerMessage.Identified(playerId, name)
+    ctx =>
+      Behaviors.receiveMessage {
+        case IncomingMessage(poker.protocol.ClientMessage.Identify(name, existingId)) =>
+          val playerId = existingId.getOrElse(java.util.UUID.randomUUID().toString)
+          sessionRegistry ! SessionRegistry.Register(playerId, outgoing)
+          outgoing ! ServerMessage.Identified(playerId, name)
 
-        ctx.ask(sessionRegistry, (r: ActorRef[SessionRegistry.JoinedGameResult]) =>
-          SessionRegistry.GetJoinedGame(playerId, r)) {
-          case scala.util.Success(result) => OnRestoreGame(result)
-          case _ => OnFailure("Failed to reload previous session")
-        }
+          ctx.ask(sessionRegistry, (r: ActorRef[SessionRegistry.JoinedGameResult]) =>
+            SessionRegistry.GetJoinedGame(playerId, r)) {
+            case scala.util.Success(result) => OnRestoreGame(result)
+            case _ => OnFailure("Failed to reload previous session")
+          }
 
-        restoring(playerId, name, sessionRegistry, gameRegistry, outgoing)
+          restoring(playerId, name, sessionRegistry, gameRegistry, outgoing)
 
-      case ConnectionClosed =>
-        Behaviors.stopped
-      case _ =>
-        outgoing ! ServerMessage.Error("First message must be Identify")
-        Behaviors.same
-    }
+        case ConnectionClosed =>
+          Behaviors.stopped
+        case _ =>
+          outgoing ! ServerMessage.Error("First message must be Identify")
+          Behaviors.same
+      }
   }
 
   private def connected(
@@ -104,13 +111,32 @@ object ClientConnection {
           Behaviors.same
 
         case IncomingMessage(poker.protocol.ClientMessage.CreateGame(settings)) =>
-          ctx.ask(
-            gameRegistry,
-            (r: ActorRef[GameRegistry.CreateResult]) => GameRegistry.CreateGame(playerId, settings, r)
-          ) {
-            case scala.util.Success(GameRegistry.GameCreated(code, ref)) => OnGameCreated(code, ref)
-            case _ => OnFailure("Failed to create game")
-          }
+          if settings.name.nonEmpty then
+            ctx.ask(
+              gameRegistry,
+              (r: ActorRef[Boolean]) => GameRegistry.GameNameExists(settings.name, r)
+            ) {
+              case scala.util.Success(true) =>
+                OnFailure("Game name already exists")
+              case scala.util.Success(false) =>
+                OnGameNameAvailable(settings)
+              case _ =>
+                OnFailure("Failed to validate game name")
+            }
+          else
+            createGame(ctx, playerId, settings, gameRegistry)
+          Behaviors.same
+
+        case OnPublicGameListResult(games) =>
+          outgoing ! ServerMessage.PublicGameList(games)
+          Behaviors.same
+
+        case OnSettingsUpdated(code, state) =>
+          outgoing ! ServerMessage.SettingsUpdated(code, state.toClientView(playerId))
+          Behaviors.same
+
+        case OnGameNameAvailable(settings) =>
+          createGame(ctx, playerId, settings, gameRegistry)
           Behaviors.same
 
         case OnGameCreated(code, gameRef) =>
@@ -179,7 +205,7 @@ object ClientConnection {
               outgoing ! ServerMessage.Error("You are not in a game")
               Behaviors.same
             case Some((code, gameRef)) =>
-              dispatchAction(ctx, playerId, code, gameRef, action)
+              dispatchAction(ctx, playerId, code, gameRef, action, gameRegistry)
               Behaviors.same
         }
 
@@ -294,7 +320,7 @@ object ClientConnection {
           outgoing ! ServerMessage.Error("Session restore is still in progress")
           Behaviors.same
       }
-      }
+    }
   }
 
   private def dispatchAction(
@@ -302,7 +328,8 @@ object ClientConnection {
                               playerId: String,
                               code: String,
                               gameRef: ActorRef[GameInstance.Command],
-                              msg: poker.protocol.ClientMessage
+                              msg: poker.protocol.ClientMessage,
+                              gameRegistry: ActorRef[GameRegistry.Command]
                             ): Unit = {
     import poker.protocol.ClientMessage.*
 
@@ -327,7 +354,49 @@ object ClientConnection {
           case scala.util.Success(res) => OnLeaveResult(code, res)
           case _ => OnFailure("Leave failed or timed out")
         }
+      case ListPublicGames() =>
+        ctx.ask(
+          gameRegistry,
+          (r: ActorRef[GameRegistry.PublicGameListResult]) => GameRegistry.ListPublicGames(r)
+        ) {
+          case scala.util.Success(GameRegistry.PublicGameListResult(games)) =>
+            OnPublicGameListResult(games)
+          case _ =>
+            OnFailure("Failed to list public games")
+        }
+
+      case UpdateSettings(code, settings) =>
+        ctx.ask(
+          gameRef,
+          (r: ActorRef[GameInstance.Response]) => GameInstance.UpdateSettings(settings, r)
+        ) {
+          case scala.util.Success(GameInstance.SettingsUpdated(state)) =>
+            OnSettingsUpdated(code, state)
+          case scala.util.Success(GameInstance.Error(msg)) =>
+            OnFailure(msg)
+          case _ =>
+            OnFailure("Failed to update settings")
+        }
+
       case _ => ()
     }
   }
+
+  private def createGame(
+                          ctx: org.apache.pekko.actor.typed.scaladsl.ActorContext[Command],
+                          playerId: String,
+                          settings: GameSettings,
+                          gameRegistry: ActorRef[GameRegistry.Command]
+                        ): Unit = {
+    ctx.ask(
+      gameRegistry,
+      (r: ActorRef[GameRegistry.CreateResult]) => GameRegistry.CreateGame(playerId, settings, r)
+    ) {
+      case scala.util.Success(GameRegistry.GameCreated(code, ref)) =>
+        OnGameCreated(code, ref)
+      case _ =>
+        OnFailure("Failed to create game")
+    }
+  }
+
 }

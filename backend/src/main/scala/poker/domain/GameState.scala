@@ -3,12 +3,6 @@ package poker.domain
 enum GameStatus:
   case WaitingForPlayers, Playing, Finished
 
-case class GameSettings(
-    smallBlind: Int = 10,
-    bigBlind: Int = 20,
-    initialChips: Int = 1000
-)
-
 case class Player(
     id: String,
     name: String,

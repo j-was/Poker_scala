@@ -3,6 +3,8 @@ package poker.actor
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 import poker.domain.GameSettings
+import poker.protocol.PublicGameInfo
+
 import scala.util.Random
 
 /**
@@ -42,6 +44,9 @@ object GameRegistry {
                          replyTo: ActorRef[LookupResult]
                        ) extends Command
   case class RemoveGame(code: String) extends Command
+  case class ListPublicGames(replyTo: ActorRef[PublicGameListResult]) extends Command
+  case class GameNameExists(name: String, replyTo: ActorRef[Boolean]) extends Command
+  case class PublicGameListResult(games: List[PublicGameInfo])
   
 
   sealed trait CreateResult
@@ -55,8 +60,14 @@ object GameRegistry {
              sessionRegistry: Option[ActorRef[SessionRegistry.Command]] = None
            ): Behavior[Command] = registry(Map.empty, autoFoldService, sessionRegistry)
 
+  case class GameMeta(
+                       ref: ActorRef[GameInstance.Command],
+                       settings: GameSettings,
+                       playerCount: Int
+                     )
+
   private def registry(
-                        games: Map[String, ActorRef[GameInstance.Command]],
+                        games: Map[String, GameMeta],
                         autoFoldService: Option[ActorRef[AutoFoldService.Command]],
                         sessionRegistry: Option[ActorRef[SessionRegistry.Command]]
                       ): Behavior[Command] = Behaviors.receive { (ctx, msg) =>
@@ -69,16 +80,34 @@ object GameRegistry {
         )
         ctx.watchWith(ref, RemoveGame(code))
         replyTo ! GameCreated(code, ref)
-        registry(games + (code -> ref), autoFoldService, sessionRegistry)
+        registry(
+          games + (code -> GameMeta(ref, settings, 1)),
+          autoFoldService,
+          sessionRegistry
+        )
 
-      case LookupGame(code, replyTo) =>
-        games.get(code) match
-          case Some(ref) => replyTo ! Found(code, ref)
-          case None => replyTo ! NotFound
+      case ListPublicGames(replyTo) =>
+        val publicGames = games.collect {
+          case (code, GameMeta(_, settings, count)) if settings.isPublic =>
+            PublicGameInfo(
+              code = code,
+              name = settings.name,
+              playerCount = count,
+              maxPlayers = settings.maxPlayers,
+              smallBlind = settings.smallBlind,
+              bigBlind = settings.bigBlind,
+              isPublic = true
+            )
+        }.toList
+        replyTo ! PublicGameListResult(publicGames)
         Behaviors.same
 
+      case GameNameExists(name, replyTo) =>
+        replyTo ! games.values.exists(_.settings.name == name)
+        Behaviors.same
+
+      // ... rest of existing cases, update RemoveGame:
       case RemoveGame(code) =>
-        ctx.log.info(s"Game '$code' actor terminated; removing from registry")
         registry(games - code, autoFoldService, sessionRegistry)
     }
   }
