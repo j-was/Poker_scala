@@ -5,7 +5,9 @@ Play Texas Hold'em with friends — host private games or join public tables. Pl
 A full-stack poker application built in Scala. Features a desktop client made with ScalaFX and a Pekko-powered server with WebSocket communication.
 
 Developed for the **"Programming in Scala"** course at the **Faculty of Mathematics and Information Science (MiNI)**, Warsaw University of Technology.
+
 ---
+
 ## Team
 
 | Member | Role |
@@ -14,7 +16,9 @@ Developed for the **"Programming in Scala"** course at the **Faculty of Mathemat
 | [Artur Szabelski](https://github.com/Artur112233) | Desktop frontend |
 | [Fryderyk Wolny](https://github.com/Frycek1) | Poker engine |
 | [Jerzy Wąsiewicz](https://github.com/j-was) | Backend server |
+
 ---
+
 ## Features
 
 - **Texas Hold'em** with full betting rounds (pre-flop, flop, turn, river)
@@ -26,5 +30,6 @@ Developed for the **"Programming in Scala"** course at the **Faculty of Mathemat
 - **Game settings** - adjust the blinds and initial chips to your liking
 
 ## API
+
 Full API documentation: [`api.md`](./docs/api.md)
 Engine usage guide: [`engine.md`](./docs/engine.md)
