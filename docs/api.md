@@ -67,8 +67,8 @@ Client connects
 | isPublic     | ❌       | `false` | When true, game appears in PublicGameList                      |
 | maxPlayers   | ❌       | `9`     | Maximum number of players. Joins rejected when reached.        |
 
-> The creator is automatically joined. The server replies with GameCreated containing the room code.
-> **_Private game:_** omit `name` (or set to `""`) and set isPublic: false. Share the code manually.
+> The creator is automatically joined. The server replies with GameCreated containing the room code.  
+> **_Private game:_** omit `name` (or set to `""`) and set `isPublic`: false. Share the code manually.  
 > **_Public game:_** set `name` to a unique display name and isPublic: true. Other players discover it via `ListPublicGames`.
 
 ---
@@ -123,8 +123,8 @@ Client connects
 { "type": "ListPublicGames" }
 ```
 
-> Returns a list of all active public games. Only games with isPublic: true are included.
-> Private games (created without a name or with isPublic: false) are never shown.
+> Returns a list of all active public games. Only games with `isPublic: true` are included.  
+> Private games (created without a name or with `isPublic: false`) are never shown.
 
 ---
 
@@ -145,9 +145,9 @@ Client connects
 }
 ```
 
-> Only the game creator (first player who joined) can update settings.
-> Only possible when status is WaitingForPlayers (before first hand) or between hands.
-> Rejected with an Error during an active hand.
+> Only the game creator (first player who joined) can update settings.  
+> Only possible when `status` is `WaitingForPlayers` (before first hand) or between hands.  
+> Rejected with an `Error` during an active hand.
 
 ---
 
@@ -266,7 +266,7 @@ Broadcast to all players when a disconnected player comes back.
 
 ### PublicGameList
 
-Sent in response to ListPublicGames. Contains all active public games.
+Sent in response to `ListPublicGames`. Contains all active public games.
 
 ```json
 {
@@ -509,7 +509,7 @@ Each player receives a personalised copy — other players' hole cards are never
 | `"Tournament is over"`                                              | StartGame after `status: Finished`                             |
 | `"Game name already exists"`                                        | CreateGame with a name that is already taken by an active game |
 | `"Failed to list public games"`                                     | Server error while fetching public game list                   |
-| `"Failed to update settings"` Settings update rejected or timed out |
+| `"Failed to update settings"` | Settings update rejected or timed out |
 
 # Usage patterns
 
@@ -595,7 +595,7 @@ Each player receives a personalised copy — other players' hole cards are never
 { "type": "SettingsUpdated", "code": "brave-hawk-342", "state": { ... } }
 ```
 
-> All fields in `settings` are optional — only send the ones you want to change.
+> All fields in `settings` are optional — only send the ones you want to change.  
 > The `name` must still be unique if changed.
 
 ---
@@ -613,5 +613,5 @@ Client connects
   ↔ Game messages flow…
 ```
 
-> You can skip ListPublicGames if the player already knows the code (e.g. shared privately).
+> You can skip ListPublicGames if the player already knows the code (e.g. shared privately).  
 > The flow for private games is unchanged — just CreateGame / JoinGame as before.
