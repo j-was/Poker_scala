@@ -1,4 +1,4 @@
-# Poker WebSocket API
+# PokerScale WebSocket API
 
 All communication happens over a single WebSocket connection at `ws://<host>:<port>/ws`.
 
