@@ -48,14 +48,28 @@ Client connects
 {
   "type": "CreateGame",
   "settings": {
+    "name": "",
     "smallBlind": 10,
     "bigBlind": 20,
-    "initialChips": 1000
+    "initialChips": 1000,
+    "isPublic": false,
+    "maxPlayers": 9
   }
 }
 ```
 
-> The creator is automatically joined. The server replies with `GameCreated` containing the room code to share with other players.
+| Field        | Required | Default | Notes                                                          |
+| ------------ | -------- | ------- | -------------------------------------------------------------- |
+| name         | ❌       | `""`    | Custom room name. Empty = auto-generated code. Must be unique. |
+| smallBlind   | ❌       | `10`    | Small blind amount in chips                                    |
+| bigBlind     | ❌       | `20`    | Big blind amount in chips                                      |
+| initialChips | ❌       | `1000`  | Starting chip stack for each player                            |
+| isPublic     | ❌       | `false` | When true, game appears in PublicGameList                      |
+| maxPlayers   | ❌       | `9`     | Maximum number of players. Joins rejected when reached.        |
+
+> The creator is automatically joined. The server replies with GameCreated containing the room code.
+> **_Private game:_** omit `name` (or set to `""`) and set isPublic: false. Share the code manually.
+> **_Public game:_** set `name` to a unique display name and isPublic: true. Other players discover it via `ListPublicGames`.
 
 ---
 
@@ -100,6 +114,40 @@ Client connects
 ```
 
 > Only possible between hands. Rejected mid-hand with an `Error`.
+
+---
+
+### List public games
+
+```json
+{ "type": "ListPublicGames" }
+```
+
+> Returns a list of all active public games. Only games with isPublic: true are included.
+> Private games (created without a name or with isPublic: false) are never shown.
+
+---
+
+### Update game settings
+
+```json
+{
+  "type": "UpdateSettings",
+  "code": "swift-fox-847",
+  "settings": {
+    "name": "New Room Name",
+    "smallBlind": 25,
+    "bigBlind": 50,
+    "initialChips": 2000,
+    "isPublic": true,
+    "maxPlayers": 6
+  }
+}
+```
+
+> Only the game creator (first player who joined) can update settings.
+> Only possible when status is WaitingForPlayers (before first hand) or between hands.
+> Rejected with an Error during an active hand.
 
 ---
 
@@ -213,6 +261,64 @@ Broadcast to all players when a disconnected player comes back.
   "name": "John"
 }
 ```
+
+---
+
+### PublicGameList
+
+Sent in response to ListPublicGames. Contains all active public games.
+
+```json
+{
+  "type": "PublicGameList",
+  "games": [
+    {
+      "code": "swift-fox-847",
+      "name": "Friday Night Poker",
+      "playerCount": 3,
+      "maxPlayers": 6,
+      "smallBlind": 20,
+      "bigBlind": 40,
+      "isPublic": true
+    },
+    {
+      "code": "calm-wolf-512",
+      "name": "High Stakes",
+      "playerCount": 1,
+      "maxPlayers": 9,
+      "smallBlind": 100,
+      "bigBlind": 200,
+      "isPublic": true
+    }
+  ]
+}
+```
+
+| Field         | Meaning                                            |
+| ------------- | -------------------------------------------------- |
+| `code`        | Room code to use with JoinGame                     |
+| `name`        | Custom name set by the creator                     |
+| `playerCount` | Number of players currently in the game            |
+| `maxPlayers`  | Maximum players allowed (joins rejected when full) |
+| `smallBlind`  | Small blind amount                                 |
+| `bigBlind`    | Big blind amount                                   |
+| `isPublic`    | Always true in this list (public games only)       |
+
+---
+
+### SettingsUpdated
+
+Sent to the player who updated settings, confirming the change.
+
+```json
+{
+  "type": "SettingsUpdated",
+  "code": "swift-fox-847",
+  "state": { ...ClientGameState... }
+}
+```
+
+> The state field contains the full game state with updated settings, so the UI can refresh immediately.
 
 ---
 
@@ -388,16 +494,124 @@ Each player receives a personalised copy — other players' hole cards are never
 
 ## Error reference
 
-| Message                                                   | Cause                                            |
-| --------------------------------------------------------- | ------------------------------------------------ |
-| `"Not your turn"`                                         | Action sent when it isn't your turn              |
-| `"Cannot check, must call or raise"`                      | Check attempted when there is an outstanding bet |
-| `"Not enough chips to raise"`                             | Raise amount exceeds your stack                  |
-| `"You are not in a game"`                                 | Action sent before joining a game                |
-| `"Game not found. Check the code and try again."`         | Unknown or expired room code                     |
-| `"Player already joined"`                                 | Duplicate join with the same playerId            |
-| `"Cannot join after the game has started"`                | Join attempted after `StartGame`                 |
-| `"Not enough players to start"`                           | StartGame with fewer than 2 players              |
-| `"Game already in progress"`                              | StartGame sent during an active hand             |
-| `"Cannot leave during a hand. Wait for the hand to end."` | LeaveGame mid-hand                               |
-| `"Tournament is over"`                                    | StartGame after `status: Finished`               |
+| Message                                                             | Cause                                                          |
+| ------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `"Not your turn"`                                                   | Action sent when it isn't your turn                            |
+| `"Cannot check, must call or raise"`                                | Check attempted when there is an outstanding bet               |
+| `"Not enough chips to raise"`                                       | Raise amount exceeds your stack                                |
+| `"You are not in a game"`                                           | Action sent before joining a game                              |
+| `"Game not found. Check the code and try again."`                   | Unknown or expired room code                                   |
+| `"Player already joined"`                                           | Duplicate join with the same playerId                          |
+| `"Cannot join after the game has started"`                          | Join attempted after `StartGame`                               |
+| `"Not enough players to start"`                                     | StartGame with fewer than 2 players                            |
+| `"Game already in progress"`                                        | StartGame sent during an active hand                           |
+| `"Cannot leave during a hand. Wait for the hand to end."`           | LeaveGame mid-hand                                             |
+| `"Tournament is over"`                                              | StartGame after `status: Finished`                             |
+| `"Game name already exists"`                                        | CreateGame with a name that is already taken by an active game |
+| `"Failed to list public games"`                                     | Server error while fetching public game list                   |
+| `"Failed to update settings"` Settings update rejected or timed out |
+
+# Usage patterns
+
+## Public vs Private games
+
+### Creating a private game
+
+```json
+// Client sends
+{ "type": "CreateGame", "settings": { "smallBlind": 10, "bigBlind": 20, "initialChips": 1000 } }
+
+// Server replies with auto-generated code
+{ "type": "GameCreated", "code": "swift-fox-847", "state": { ... } }
+
+// Creator shares "swift-fox-847" with friends via chat/message
+```
+
+---
+
+### Creating a public game
+
+```json
+// Client sends
+{
+  "type": "CreateGame",
+  "settings": {
+    "name": "Casual Friday",
+    "smallBlind": 20,
+    "bigBlind": 40,
+    "initialChips": 2000,
+    "isPublic": true,
+    "maxPlayers": 6
+  }
+}
+
+// Server replies with code
+{ "type": "GameCreated", "code": "brave-hawk-342", "state": { ... } }
+```
+
+---
+
+### Browsing and joining public games
+
+```json
+// Any player sends
+{ "type": "ListPublicGames" }
+
+// Server replies
+{
+  "type": "PublicGameList",
+  "games": [
+    { "code": "brave-hawk-342", "name": "Casual Friday", "playerCount": 2, "maxPlayers": 6, ... },
+    { "code": "calm-wolf-512", "name": "High Stakes", "playerCount": 5, "maxPlayers": 9, ... }
+  ]
+}
+
+// Player picks a game and joins normally
+{ "type": "JoinGame", "code": "brave-hawk-342" }
+```
+
+---
+
+### Updating settings between hands
+
+```json
+// Only the creator (first player) can do this
+// Must be in WaitingForPlayers phase or between hands
+
+{
+  "type": "UpdateSettings",
+  "code": "brave-hawk-342",
+  "settings": {
+    "name": "Serious Friday",
+    "smallBlind": 50,
+    "bigBlind": 100,
+    "initialChips": 5000,
+    "isPublic": true,
+    "maxPlayers": 4
+  }
+}
+
+// Server confirms
+{ "type": "SettingsUpdated", "code": "brave-hawk-342", "state": { ... } }
+```
+
+> All fields in `settings` are optional — only send the ones you want to change.
+> The `name` must still be unique if changed.
+
+---
+
+### Full connection flow with public games
+
+```text
+Client connects
+  → Client sends   Identify
+  ← Server replies Identified
+  → Client sends   ListPublicGames
+  ← Server replies PublicGameList
+  → Client sends   JoinGame with code from list
+  ← Server replies GameJoined with full state
+  ↔ Game messages flow…
+```
+
+> You can skip ListPublicGames if the player already knows the code (e.g. shared privately).
+> The flow for private games is unchanged — just CreateGame / JoinGame as before.
