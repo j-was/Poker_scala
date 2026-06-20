@@ -12,6 +12,14 @@ Compile / scalacOptions ++= Seq(
 
 Compile / mainClass := Some("poker.Main")
 
+assembly / mainClass := Some("poker.Main")
+assembly / assemblyMergeStrategy := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case "module-info.class" => MergeStrategy.discard
+  case "reference.conf" => MergeStrategy.concat
+  case x => MergeStrategy.first
+}
+
 lazy val root = project
   .in(file("."))
   .settings(
