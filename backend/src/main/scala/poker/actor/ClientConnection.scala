@@ -3,7 +3,6 @@ package poker.actor
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 import poker.domain.*
-import poker.protocol.JsonCodecs.given_Decoder_Board
 import poker.protocol.ServerMessage
 
 import scala.concurrent.duration._
@@ -48,6 +47,12 @@ object ClientConnection {
 
   private case class OnFailure(reason: String) extends Command
 
+  private case class OnRestoreGame(result: SessionRegistry.JoinedGameResult) extends Command
+  private case class OnRestoreLookup(playerId: String, name: String,
+                                     code: String, result: GameRegistry.LookupResult) extends Command
+  private case class OnRestoredState(playerId: String, name: String,
+                                     code: String, gameRef: ActorRef[GameInstance.Command], state: GameState) extends Command
+
   def apply(
              sessionRegistry: ActorRef[SessionRegistry.Command],
              gameRegistry: ActorRef[GameRegistry.Command],
@@ -60,19 +65,27 @@ object ClientConnection {
                                   sessionRegistry: ActorRef[SessionRegistry.Command],
                                   gameRegistry: ActorRef[GameRegistry.Command],
                                   outgoing: ActorRef[ServerMessage]
-                                ): Behavior[Command] = Behaviors.receiveMessage {
+                                ): Behavior[Command] = Behaviors.setup {
+    ctx => Behaviors.receiveMessage {
+      case IncomingMessage(poker.protocol.ClientMessage.Identify(name, existingId)) =>
+        val playerId = existingId.getOrElse(java.util.UUID.randomUUID().toString)
+        sessionRegistry ! SessionRegistry.Register(playerId, outgoing)
+        outgoing ! ServerMessage.Identified(playerId, name)
 
-    case IncomingMessage(poker.protocol.ClientMessage.Identify(name, existingId)) =>
-      val playerId = existingId.getOrElse(java.util.UUID.randomUUID().toString)
-      sessionRegistry ! SessionRegistry.Register(playerId, outgoing)
-      outgoing ! ServerMessage.Identified(playerId, name)
-      connected(playerId, name, None, sessionRegistry, gameRegistry, outgoing)
+        ctx.ask(sessionRegistry, (r: ActorRef[SessionRegistry.JoinedGameResult]) =>
+          SessionRegistry.GetJoinedGame(playerId, r)) {
+          case scala.util.Success(result) => OnRestoreGame(result)
+          case _ => OnFailure("Failed to reload previous session")
+        }
 
-    case ConnectionClosed =>
-      Behaviors.stopped
+        restoring(playerId, name, sessionRegistry, gameRegistry, outgoing)
 
-    case _ =>
-      Behaviors.same
+      case ConnectionClosed =>
+        Behaviors.stopped
+      case _ =>
+        outgoing ! ServerMessage.Error("First message must be Identify")
+        Behaviors.same
+    }
   }
 
   private def connected(
@@ -86,7 +99,6 @@ object ClientConnection {
     Behaviors.setup { ctx =>
 
       Behaviors.receiveMessage {
-
         case IncomingMessage(poker.protocol.ClientMessage.Ping) =>
           outgoing ! ServerMessage.Pong
           Behaviors.same
@@ -150,8 +162,9 @@ object ClientConnection {
 
         case OnJoinResult(code, gameRef, GameInstance.GameJoined(_, state)) => {
           sessionRegistry ! SessionRegistry.JoinedGame(playerId, code)
-          sessionRegistry ! SessionRegistry.BroadcastRaw(code, ServerMessage.PlayerJoined(code, playerId, name))
+          sessionRegistry ! SessionRegistry.BroadcastRawExcept(code, playerId, ServerMessage.PlayerJoined(code, playerId, name))
           outgoing ! ServerMessage.GameJoined(code, state.toClientView(playerId))
+          sessionRegistry ! SessionRegistry.BroadcastToGame(code, state, (_, cs) => ServerMessage.StateUpdate(code, cs))
           connected(playerId, name, Some(code -> gameRef), sessionRegistry, gameRegistry, outgoing)
         }
 
@@ -197,6 +210,7 @@ object ClientConnection {
 
         case OnLeaveResult(code, GameInstance.ActionSuccess(state)) => {
           sessionRegistry ! SessionRegistry.LeftGame(playerId, code)
+          sessionRegistry ! SessionRegistry.BroadcastToGame(code, state, (_, cs) => ServerMessage.StateUpdate(code, cs))
           sessionRegistry ! SessionRegistry.BroadcastRaw(code, ServerMessage.PlayerLeft(code, playerId, name))
           outgoing ! ServerMessage.StateUpdate(code, state.toClientView(playerId))
           connected(playerId, name, None, sessionRegistry, gameRegistry, outgoing)
@@ -226,6 +240,61 @@ object ClientConnection {
           Behaviors.same
       }
     }
+  }
+
+  private def restoring(
+                         playerId: String,
+                         name: String,
+                         sessionRegistry: ActorRef[SessionRegistry.Command],
+                         gameRegistry: ActorRef[GameRegistry.Command],
+                         outgoing: ActorRef[ServerMessage]
+                       ): Behavior[Command] = {
+    Behaviors.setup { ctx =>
+      Behaviors.receiveMessage {
+        case OnRestoreGame(SessionRegistry.JoinedGameResult(None)) =>
+          connected(playerId, name, None, sessionRegistry, gameRegistry, outgoing)
+        case OnRestoreGame(SessionRegistry.JoinedGameResult(Some(code))) =>
+          ctx.ask(gameRegistry, (r: ActorRef[GameRegistry.LookupResult]) =>
+            GameRegistry.LookupGame(code, r)
+          ) {
+            case scala.util.Success(result) => OnRestoreLookup(playerId, name, code, result)
+            case _ => OnFailure(s"Could not restore game '$code'")
+          }
+          Behaviors.same
+
+        case OnRestoreLookup(_, _, code, GameRegistry.Found(_, gameRef)) =>
+          ctx.ask(gameRef, (r: ActorRef[GameState]) => GameInstance.GetState(r)) {
+            case scala.util.Success(state) => OnRestoredState(playerId, name, code, gameRef,
+              state)
+            case _ => OnFailure(s"Could not restore state for '$code'")
+          }
+          Behaviors.same
+
+        case OnRestoreLookup(_, _, _, GameRegistry.NotFound) =>
+          connected(playerId, name, None, sessionRegistry, gameRegistry, outgoing)
+
+        case OnRestoredState(_, _, code, gameRef, state) =>
+          outgoing ! ServerMessage.GameJoined(code, state.toClientView(playerId))
+          sessionRegistry ! SessionRegistry.BroadcastRaw(code, ServerMessage.PlayerReconnected(code, playerId, name))
+          connected(playerId, name, Some(code -> gameRef), sessionRegistry, gameRegistry, outgoing)
+
+        case OnFailure(reason) =>
+          outgoing ! ServerMessage.Error(reason)
+          connected(playerId, name, None, sessionRegistry, gameRegistry, outgoing)
+
+        case ConnectionClosed =>
+          sessionRegistry ! SessionRegistry.Unregister(playerId)
+          Behaviors.stopped
+
+        case IncomingMessage(poker.protocol.ClientMessage.Ping) =>
+          outgoing ! ServerMessage.Pong
+          Behaviors.same
+
+        case IncomingMessage(_) =>
+          outgoing ! ServerMessage.Error("Session restore is still in progress")
+          Behaviors.same
+      }
+      }
   }
 
   private def dispatchAction(

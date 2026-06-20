@@ -21,3 +21,5 @@ Thumbs.db
 # Editor
 .vscode/settings.json
 *.swp
+
+.bsp/

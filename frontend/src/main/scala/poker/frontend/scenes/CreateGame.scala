@@ -9,20 +9,25 @@ import poker.frontend.widgets.Shared.ReturnButton
 object CreateGame {
   def apply(): Scene = {
     new Scene {
-      root = new BorderPane {
-        style = "-fx-background-color: #4f9a3a;"
-        padding = Insets(20)
+      root = new StackPane {
+        style = "-fx-background-color: radial-gradient(center 50% 50%, radius 70%, #2e7d32, #1b5e20);"
 
-        val topNavigation = new BorderPane {
-          left = ReturnButton()
+        val mainContent = new BorderPane {
+          padding = Insets(20)
+
+          val topNavigation = new BorderPane {
+            left = ReturnButton()
+          }
+
+          top = topNavigation
+
+          center = new StackPane {
+            padding = Insets(40, 150, 40, 150)
+            children = Seq(CreateGamePanel())
+          }
         }
 
-        top = topNavigation
-
-        center = new StackPane {
-          padding = Insets(40, 150, 40, 150)
-          children = Seq(CreateGamePanel())
-        }
+        children = Seq(mainContent)
       }
     }
   }

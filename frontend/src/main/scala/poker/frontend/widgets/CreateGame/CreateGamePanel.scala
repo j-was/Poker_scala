@@ -1,11 +1,16 @@
 package poker.frontend.widgets.CreateGame
 
+import poker.domain.GameSettings
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.{Label, Slider, TextField, ToggleGroup}
+import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
 import poker.frontend.widgets.JoinGame.GameModeToggle
-import poker.frontend.widgets.CreateGame.CreateButton
 import poker.frontend.ScenesNavigator
+import poker.frontend.client.PokerSession
+import poker.frontend.widgets.Shared.ErrorDialog
+import scalafx.scene.effect.DropShadow
+import scalafx.scene.paint.Color
 
 object CreateGamePanel {
   def apply(): VBox = {
@@ -15,26 +20,81 @@ object CreateGamePanel {
       padding = Insets(40)
       style =
         """
-          -fx-background-color: #2a2a2a;
+          -fx-background-color: rgba(0, 0, 0, 0.85);
           -fx-background-radius: 20;
-          -fx-border-color: #1a1a1a;
-          -fx-border-width: 4;
+          -fx-border-color: #d4af37;
+          -fx-border-width: 3;
           -fx-border-radius: 20;
         """
+
+      val dollarsLeft = new ImageView(new Image("file:./src/main/scala/poker/frontend/Resources/dolar.png")) {
+        fitWidth = 60
+        preserveRatio = true
+      }
+
+      val titleLabel = new Label("Ustawienia Nowej Gry") {
+        style =
+          """
+            -fx-text-fill: white;
+            -fx-font-size: 36px;
+            -fx-font-weight: bold;
+            -fx-font-family: "Noto Serif Display", serif;
+          """
+        effect = new DropShadow {
+          color = Color.Black
+          radius = 10
+          offsetX = 3
+          offsetY = 3
+        }
+      }
+
+      val dollarsRight = new ImageView(new Image("file:./src/main/scala/poker/frontend/Resources/dolar.png")) {
+        fitWidth = 60
+        preserveRatio = true
+      }
+
+      val titleRow = new HBox {
+        alignment = Pos.Center
+        spacing = 20
+        children = Seq(dollarsLeft, titleLabel, dollarsRight)
+      }
 
       val modeGroup = new ToggleGroup()
       val modeToggle = GameModeToggle(modeGroup, () => {}, () => {})
 
+      val playerNameField = new TextField {
+        promptText = "Nazwa gracza"
+        prefWidth = 320
+        style =
+          """
+            -fx-font-size: 18px;
+            -fx-background-color: rgba(255, 255, 255, 0.9);
+            -fx-background-radius: 10;
+            -fx-border-radius: 10;
+            -fx-border-color: #d4af37;
+            -fx-border-width: 2;
+          """
+      }
+
       def createSliderRow(labelStr: String, minVal: Int, maxVal: Int, initialVal: Int): (HBox, Slider) = {
         val valueLabel = new Label(labelStr) {
-          style = "-fx-text-fill: white; -fx-font-size: 18px;"
+          style = "-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;"
           prefWidth = 150
         }
 
         val textField = new TextField {
           text = initialVal.toString
           prefWidth = 80
-          style = "-fx-font-size: 16px; -fx-alignment: center;"
+          style =
+            """
+              -fx-font-size: 16px;
+              -fx-alignment: center;
+              -fx-background-color: rgba(255, 255, 255, 0.9);
+              -fx-background-radius: 8;
+              -fx-border-radius: 8;
+              -fx-border-color: #d4af37;
+              -fx-border-width: 1.5;
+            """
         }
 
         val slider = new Slider {
@@ -46,9 +106,8 @@ object CreateGamePanel {
           showTickLabels = false
           style =
             """
-              -fx-accent: #4f9a3a;
-              -fx-control-inner-background: #1a1a1a;
-              -fx-base: red;
+              -fx-accent: #d4af37;
+              -fx-control-inner-background: rgba(0, 0, 0, 0.5);
               -fx-focus-color: transparent;
               -fx-faint-focus-color: transparent;
               -fx-padding: 10px 0;
@@ -110,14 +169,23 @@ object CreateGamePanel {
         alignment = Pos.BottomRight
         children = Seq(CreateButton(() =>
         {
-          ScenesNavigator.showWaitingRoom()
+          PokerSession.configure(
+            name = playerNameField.text.value,
+            stateHandler = ScenesNavigator.showServerState,
+            errorHandler = msg => ErrorDialog.show(msg)
+          )
+
+          PokerSession.createGame(GameSettings(
+            smallBlind = smallBlindSlider.value.value.toInt,
+            bigBlind = bigBlindSlider.value.value.toInt,
+            initialChips = buyInSlider.value.value.toInt
+          ))
         }))
       }
 
       children = Seq(
-        new Label("Ustawienia Nowej Gry") {
-          style = "-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;"
-        },
+        titleRow,
+        playerNameField,
         modeToggle,
         maxPlayersRow,
         buyInRow,
