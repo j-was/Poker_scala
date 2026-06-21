@@ -82,3 +82,10 @@
     -fx-faint-focus-color: transparent;
     -fx-padding: 10px 0;
 }
+
+.game-mode-toggle {
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}

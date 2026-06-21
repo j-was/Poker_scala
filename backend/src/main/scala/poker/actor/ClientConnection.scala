@@ -22,7 +22,7 @@ import org.apache.pekko.util.Timeout
  *     re-registers its outgoing channel, overwriting the stale one.
  */
 object ClientConnection {
-  implicit val timeout: Timeout = Timeout(3.seconds)
+  implicit val timeout: Timeout = Timeout(10.seconds)
 
   sealed trait Command
 

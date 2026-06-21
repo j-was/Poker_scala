@@ -13,19 +13,18 @@ object ScenesNavigator
     mainStage.scene = MainScene()
   }
   def showJoinGame(): Unit =
-    {
-      mainStage.scene = JoinGame()
-    }
+  {
+    mainStage.scene = JoinGame()
+  }
 
   def showCreateGame(): Unit =
-    {
-      mainStage.scene = CreateGame()
-    }
+  {
+    mainStage.scene = CreateGame()
+  }
 
-  def showWaitingRoom(): Unit =
-    {
-      mainStage.scene = WaitingRoom()
-    }
+  def showWaitingRoom(code: String, myPlayerId: String, state: ClientGameState): Unit = {
+    mainStage.scene = WaitingRoom(code, myPlayerId, state)
+  }
 
   def showGameScene(
                      code: String,
@@ -47,10 +46,10 @@ object ScenesNavigator
       }
     )
   }
-  
+
   def showServerState(code: String, myPlayerId: String, state: ClientGameState): Unit = {
     if state.status == poker.domain.GameStatus.WaitingForPlayers then
-      mainStage.scene = WaitingRoom()
+      showWaitingRoom(code, myPlayerId, state)
     else
       showGameScene(code, myPlayerId, state)
   }

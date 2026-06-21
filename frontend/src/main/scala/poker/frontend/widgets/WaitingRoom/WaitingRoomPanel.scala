@@ -1,9 +1,10 @@
 package poker.frontend.widgets.WaitingRoom
 
 import poker.frontend.client.PokerSession
+import poker.domain.{GameSettings, ClientGameState}
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{Label, ListCell, ListView, Slider, TextField, ToggleGroup}
+import scalafx.scene.control.{Button, Label, ListCell, ListView, Slider, TextField, ToggleGroup}
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
 import poker.frontend.widgets.JoinGame.GameModeToggle
 import scalafx.scene.effect.DropShadow
@@ -13,13 +14,10 @@ import scalafx.scene.paint.Color
 case class Player(nick: String, isReady: Boolean)
 
 object WaitingRoomPanel {
-  def apply(): VBox = {
-    val current = PokerSession.currentView
-    val code = current.map(_._1).getOrElse("-")
-    val myPlayerId = current.map(_._2).getOrElse("")
-    val state = current.map(_._3)
+  def apply(code: String, myPlayerId: String, state: ClientGameState): VBox = {
+    val currentSettings = state.settings
 
-    val isOwner = state.exists(_.players.headOption.exists(_.id == myPlayerId))
+    val isOwner = state.players.headOption.exists(_.id == myPlayerId)
 
     new VBox {
       alignment = Pos.TopCenter
@@ -59,9 +57,7 @@ object WaitingRoomPanel {
         styleClass += "waiting-room-panel-room-info-row"
         children = Seq(
           createHeaderInfo("ID Pokoju:", code),
-//          createHeaderInfo("Typ:", state.map(s => if s.settings.isPublic then "Publiczny" else "Prywatny")
-//            .getOrElse("Prywatne"))
-          createHeaderInfo("Typ:", "Prywatny - do zmiany w przyszlosci")
+          createHeaderInfo("Typ:", if (currentSettings.isPublic) "Publiczny" else "Prywatny")
         )
       }
 
@@ -73,13 +69,13 @@ object WaitingRoomPanel {
           spacing = 10
           hgrow = Priority.Always
 
-          val playersCountLabel = new Label(s"Gracze (${state.map(_.players.size).getOrElse(0)}/max_graczy- do zmiany)") {
+          val playersCountLabel = new Label(s"Gracze (${state.players.size}/${currentSettings.maxPlayers})") {
             style = "-fx-text-fill: #d4af37; -fx-font-size: 20px; -fx-font-weight: bold;"
           }
 
           val playersList = new ListView[Player](
             ObservableBuffer.from(
-              state.toList.flatMap(_.players).map { p =>
+              state.players.map { p =>
                 Player(p.name + (if (p.id == myPlayerId) " (Ty)" else ""), true)
               }
             )
@@ -170,17 +166,23 @@ object WaitingRoomPanel {
 
             val roomNameField = new TextField {
               promptText = "Nazwa pokoju"
-              text = "New Room Name"
+              text = currentSettings.name
               styleClass += "waiting-room-panel-new-room"
             }
 
+            var isPublicMode = currentSettings.isPublic
             val modeGroup = new ToggleGroup()
-            val modeToggle = GameModeToggle(modeGroup, () => {}, () => {})
+            val modeToggle = GameModeToggle(
+              modeGroup,
+              isPublicMode,
+              () => isPublicMode = false,
+              () => isPublicMode = true
+            )
 
-            val (maxPlayersRow, _) = createSliderRow("Max graczy:", 2, 10, 6)
-            val (buyInRow, buyInSlider) = createSliderRow("Wpisowe ($):", 100, 10000, state.map(_.settings.initialChips).getOrElse(2000))
-            val (smallBlindRow, smallBlindSlider) = createSliderRow("Small Blind:", 5, 500, state.map(_.settings.smallBlind).getOrElse(25))
-            val (bigBlindRow, bigBlindSlider) = createSliderRow("Big Blind:", 10, 1000, state.map(_.settings.bigBlind).getOrElse(50))
+            val (maxPlayersRow, maxPlayersSlider) = createSliderRow("Max graczy:", 2, 10, currentSettings.maxPlayers)
+            val (buyInRow, buyInSlider) = createSliderRow("Wpisowe ($):", 100, 10000, currentSettings.initialChips)
+            val (smallBlindRow, smallBlindSlider) = createSliderRow("Small Blind:", 5, 500, currentSettings.smallBlind)
+            val (bigBlindRow, bigBlindSlider) = createSliderRow("Big Blind:", 10, 1000, currentSettings.bigBlind)
 
             smallBlindSlider.value.onChange { (_, _, newVal) =>
               if (bigBlindSlider.value.value < newVal.doubleValue) {
@@ -203,15 +205,30 @@ object WaitingRoomPanel {
               }
             }
 
-            children = Seq(header, roomNameField, modeToggle, maxPlayersRow, buyInRow, smallBlindRow, bigBlindRow)
+            val acceptButton = new Button("Akceptuj") {
+              style = "-fx-background-color: rgba(212, 175, 55, 0.8); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-background-radius: 5;"
+              prefWidth = 350
+              onAction = _ => {
+                PokerSession.updateSettings(GameSettings(
+                  name = roomNameField.text.value,
+                  smallBlind = smallBlindSlider.value.value.toInt,
+                  bigBlind = bigBlindSlider.value.value.toInt,
+                  initialChips = buyInSlider.value.value.toInt,
+                  isPublic = isPublicMode,
+                  maxPlayers = maxPlayersSlider.value.value.toInt
+                ))
+              }
+            }
+
+            children = Seq(header, roomNameField, modeToggle, maxPlayersRow, buyInRow, smallBlindRow, bigBlindRow, acceptButton)
           } else {
             children = Seq(
               new Label("USTAWIENIA") {
                 style = "-fx-text-fill: #d4af37; -fx-font-weight: bold; -fx-font-size: 20px;"
               },
-              createSettingRow("Wpisowe:", state.map(s => s"${s.settings.initialChips}$$").getOrElse("-")),
-              createSettingRow("Small Blind:", state.map(s => s"${s.settings.smallBlind}$$").getOrElse("-")),
-              createSettingRow("Big Blind:", state.map(s => s"${s.settings.bigBlind}$$").getOrElse("-"))
+              createSettingRow("Wpisowe:", s"${currentSettings.initialChips}$$"),
+              createSettingRow("Small Blind:", s"${currentSettings.smallBlind}$$"),
+              createSettingRow("Big Blind:", s"${currentSettings.bigBlind}$$")
             )
           }
         }

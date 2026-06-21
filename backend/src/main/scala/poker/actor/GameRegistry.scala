@@ -7,9 +7,6 @@ import poker.protocol.PublicGameInfo
 
 import scala.util.Random
 
-/**
- * Top-level registry that owns all active game instances.
- */
 object GameRegistry {
 
   private val adjectives = Vector(
@@ -123,6 +120,13 @@ object GameRegistry {
         Behaviors.same
 
       case RemoveGame(code) =>
+        games.get(code).foreach { meta =>
+          ctx.stop(meta.ref)
+        }
+        sessionRegistry.foreach { registry =>
+          registry ! SessionRegistry.GameRemoved(code)
+        }
+        ctx.log.info(s"Game '$code' removed from registry")
         registry(games - code, autoFoldService, sessionRegistry)
     }
   }

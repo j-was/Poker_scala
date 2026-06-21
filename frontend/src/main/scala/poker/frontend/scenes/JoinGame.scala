@@ -28,6 +28,7 @@ object JoinGame {
             left = ReturnButton()
             right = GameModeToggle(
               modeGroup,
+              false,
               () => {
                 privatePanel.visible = true
                 publicPanel.visible = false
