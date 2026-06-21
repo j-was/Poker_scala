@@ -50,6 +50,7 @@ object CreateGamePanel {
       val modeGroup = new ToggleGroup()
       val modeToggle = GameModeToggle(
         modeGroup,
+        isPublicMode,
         () => isPublicMode = false,
         () => isPublicMode = true
       )

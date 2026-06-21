@@ -133,6 +133,11 @@ object ClientConnection {
 
         case OnSettingsUpdated(code, state) =>
           outgoing ! ServerMessage.SettingsUpdated(code, state.toClientView(playerId))
+          sessionRegistry ! SessionRegistry.BroadcastToGame(
+            code,
+            state,
+            (pid, cs) => ServerMessage.StateUpdate(code, cs)
+          )
           Behaviors.same
 
         case OnGameNameAvailable(settings) =>

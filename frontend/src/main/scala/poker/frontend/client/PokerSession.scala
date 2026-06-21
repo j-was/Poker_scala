@@ -1,6 +1,6 @@
 package poker.frontend.client
 
-import poker.domain.{ClientGameState, GameSettings}
+import poker.domain.*
 import poker.protocol.{ClientMessage, ServerMessage, PublicGameInfo}
 import scalafx.application.Platform
 import poker.frontend.ScenesNavigator
@@ -186,9 +186,38 @@ object PokerSession {
       case ServerMessage.GameJoined(code, state) => showState(code, state)
       case ServerMessage.GameStarted(code, state) => showState(code, state)
       case ServerMessage.StateUpdate(code, state) => showState(code, state)
+      case ServerMessage.SettingsUpdated(code, state) => showState(code, state)
       case ServerMessage.GameOver(code, _, _, state) => showState(code, state)
       case ServerMessage.PublicGameList(games) => Platform.runLater { publicGamesHandlerRef.get()(games) }
       case ServerMessage.Error(msg) => Platform.runLater {errorHandlerRef.get()(msg)}
+
+      case ServerMessage.PlayerJoined(code, playerId, name) =>
+        stateRef.get().currentGameState.foreach { state =>
+          val newPlayer = ClientPlayer(playerId, name, 0, 0, true, false, false)
+          showState(code, state.copy(players = state.players :+ newPlayer))
+        }
+
+      case ServerMessage.PlayerLeft(code, playerId, _) =>
+        stateRef.get().currentGameState.foreach { state =>
+          showState(code, state.copy(players = state.players.filterNot(_.id == playerId)))
+        }
+
+      case ServerMessage.PlayerDisconnected(code, playerId, _) =>
+        stateRef.get().currentGameState.foreach { state =>
+          if state.status == poker.domain.GameStatus.WaitingForPlayers then
+            showState(code, state.copy(players = state.players.filterNot(_.id == playerId)))
+          else
+            showState(code, state.copy(players = state.players.map(p => if p.id == playerId then p.copy(isActive = false) else p)))
+        }
+
+      case ServerMessage.PlayerReconnected(code, playerId, name) =>
+        stateRef.get().currentGameState.foreach { state =>
+          val updatedPlayers = if state.players.exists(_.id == playerId) then
+            state.players.map(p => if p.id == playerId then p.copy(isActive = true) else p)
+          else
+            state.players :+ ClientPlayer(playerId, name, 0, 0, true, false, false)
+          showState(code, state.copy(players = updatedPlayers))
+        }
       case _ => ()
     }
   }

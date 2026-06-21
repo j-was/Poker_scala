@@ -27,7 +27,7 @@ import scala.util.{Failure, Success}
  *   client.send(ClientMessage.Identify("Alice", storedPlayerId))
  * }}}
  */
-val isDebug = true
+val isDebug = false
 class PokerClient(serverUrl: String) {
 
   private given system: ActorSystem[Nothing] =
@@ -52,9 +52,9 @@ class PokerClient(serverUrl: String) {
    */
   def send(msg: ClientMessage): Boolean = {
     if(isDebug) {
-        println(s"[WYCHODZĄCE] Obiekt: $msg")
-        println(s"[WYCHODZĄCE] JSON: ${msg.asJson.noSpaces}")
-      }
+      println(s"[WYCHODZĄCE] Obiekt: $msg")
+      println(s"[WYCHODZĄCE] JSON: ${msg.asJson.noSpaces}")
+    }
     sendQueue.offer(msg)
   }
 
@@ -96,8 +96,15 @@ class PokerClient(serverUrl: String) {
             println(s"[PRZYCHODZĄCE] JSON: $text")
           }
           decode[ServerMessage](text) match
-            case Right(msg) => messageHandler(msg)
-            case Left(err) => system.log.warn(s"Could not decode server message: $err")
+            case Right(msg) =>
+              if(isDebug) {
+                println(s"[ZDEKODOWANE] $msg")
+              }
+              messageHandler(msg)
+            case Left(err) =>
+              println(s"[BŁĄD DEKODOWANIA] Nie udało się zdekodować wiadomości serwera: $err")
+              println(s"[BŁĄD DEKODOWANIA] Surowy JSON: $text")
+              system.log.warn(s"Could not decode server message: $err")
         case _ => ()
       }
     }

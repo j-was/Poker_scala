@@ -1,7 +1,7 @@
 package poker.frontend.widgets.WaitingRoom
 
 import poker.frontend.client.PokerSession
-import poker.domain.GameSettings
+import poker.domain.{GameSettings, ClientGameState}
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.{Button, Label, ListCell, ListView, Slider, TextField, ToggleGroup}
@@ -14,14 +14,10 @@ import scalafx.scene.paint.Color
 case class Player(nick: String, isReady: Boolean)
 
 object WaitingRoomPanel {
-  def apply(): VBox = {
-    val current = PokerSession.currentView
-    val code = current.map(_._1).getOrElse("-")
-    val myPlayerId = current.map(_._2).getOrElse("")
-    val state = current.map(_._3)
-    val currentSettings = state.map(_.settings).getOrElse(GameSettings())
+  def apply(code: String, myPlayerId: String, state: ClientGameState): VBox = {
+    val currentSettings = state.settings
 
-    val isOwner = state.exists(_.players.headOption.exists(_.id == myPlayerId))
+    val isOwner = state.players.headOption.exists(_.id == myPlayerId)
 
     new VBox {
       alignment = Pos.TopCenter
@@ -73,13 +69,13 @@ object WaitingRoomPanel {
           spacing = 10
           hgrow = Priority.Always
 
-          val playersCountLabel = new Label(s"Gracze (${state.map(_.players.size).getOrElse(0)}/${currentSettings.maxPlayers})") {
+          val playersCountLabel = new Label(s"Gracze (${state.players.size}/${currentSettings.maxPlayers})") {
             style = "-fx-text-fill: #d4af37; -fx-font-size: 20px; -fx-font-weight: bold;"
           }
 
           val playersList = new ListView[Player](
             ObservableBuffer.from(
-              state.toList.flatMap(_.players).map { p =>
+              state.players.map { p =>
                 Player(p.name + (if (p.id == myPlayerId) " (Ty)" else ""), true)
               }
             )
@@ -178,6 +174,7 @@ object WaitingRoomPanel {
             val modeGroup = new ToggleGroup()
             val modeToggle = GameModeToggle(
               modeGroup,
+              isPublicMode,
               () => isPublicMode = false,
               () => isPublicMode = true
             )
