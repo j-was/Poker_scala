@@ -15,8 +15,8 @@ lazy val frontend = (project in file("."))
       "io.circe" %% "circe-parser"  % circeVersion,
       "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
       "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
-      "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion
+      "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion,
+      "org.scalatest" %% "scalatest" % "3.2.17" % Test
     ),
     Compile / mainClass := Some("poker.frontend.PokerApp"),
   )
-
