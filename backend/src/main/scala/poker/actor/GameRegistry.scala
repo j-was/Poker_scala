@@ -96,6 +96,12 @@ object GameRegistry {
           sessionRegistry
         )
 
+      case LookupGame(code, replyTo) =>
+        games.get(code) match
+          case Some(meta) => replyTo ! Found(code, meta.ref)
+          case None => replyTo ! NotFound
+        Behaviors.same
+
       case ListPublicGames(replyTo) =>
         val publicGames = games.collect {
           case (code, GameMeta(_, settings, count)) if settings.isPublic =>
@@ -116,7 +122,6 @@ object GameRegistry {
         replyTo ! games.values.exists(_.settings.name == name)
         Behaviors.same
 
-      // ... rest of existing cases, update RemoveGame:
       case RemoveGame(code) =>
         registry(games - code, autoFoldService, sessionRegistry)
     }
