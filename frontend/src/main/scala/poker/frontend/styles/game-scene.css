@@ -20,6 +20,10 @@
     -fx-padding: 8 16 8 16;
 }
 
+.game-button:hover {
+    -fx-background-color: -poker-button-hover-color;
+}
+
 .card {
     -fx-background-color: linear-gradient(to bottom, #ffffff, #f4f4f4);
     -fx-background-radius: 8;
@@ -54,8 +58,4 @@
 
 .raise-input {
     -fx-font-size: 16px;
-}
-
-.game-button:hover {
-    -fx-background-color: -poker-button-hover-color;
 }

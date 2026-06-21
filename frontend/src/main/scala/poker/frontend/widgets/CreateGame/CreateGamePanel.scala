@@ -18,14 +18,7 @@ object CreateGamePanel {
       alignment = Pos.TopCenter
       spacing = 25
       padding = Insets(40)
-      style =
-        """
-          -fx-background-color: rgba(0, 0, 0, 0.85);
-          -fx-background-radius: 20;
-          -fx-border-color: #d4af37;
-          -fx-border-width: 3;
-          -fx-border-radius: 20;
-        """
+      styleClass += "create-game-panel"
 
       val dollarsLeft = new ImageView(new Image("file:./src/main/scala/poker/frontend/Resources/dolar.png")) {
         fitWidth = 60
@@ -33,13 +26,7 @@ object CreateGamePanel {
       }
 
       val titleLabel = new Label("Ustawienia Nowej Gry") {
-        style =
-          """
-            -fx-text-fill: white;
-            -fx-font-size: 36px;
-            -fx-font-weight: bold;
-            -fx-font-family: "Noto Serif Display", serif;
-          """
+        styleClass += "create-game-panel-title"
         effect = new DropShadow {
           color = Color.Black
           radius = 10
@@ -65,36 +52,25 @@ object CreateGamePanel {
       val playerNameField = new TextField {
         promptText = "Nazwa gracza"
         prefWidth = 320
-        style =
-          """
-            -fx-font-size: 18px;
-            -fx-background-color: rgba(255, 255, 255, 0.9);
-            -fx-background-radius: 10;
-            -fx-border-radius: 10;
-            -fx-border-color: #d4af37;
-            -fx-border-width: 2;
-          """
+        styleClass += "create-game-panel-player-name"
+      }
+
+      val customRoomName = new TextField {
+        promptText = "Podaj nazwę swojego pokoju (nie wymagane)"
+        prefWidth = 320
+        styleClass += "create-game-panel-custom-room-name"
       }
 
       def createSliderRow(labelStr: String, minVal: Int, maxVal: Int, initialVal: Int): (HBox, Slider) = {
         val valueLabel = new Label(labelStr) {
-          style = "-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;"
+          styleClass += "create-game-panel-slider-label"
           prefWidth = 150
         }
 
         val textField = new TextField {
           text = initialVal.toString
           prefWidth = 80
-          style =
-            """
-              -fx-font-size: 16px;
-              -fx-alignment: center;
-              -fx-background-color: rgba(255, 255, 255, 0.9);
-              -fx-background-radius: 8;
-              -fx-border-radius: 8;
-              -fx-border-color: #d4af37;
-              -fx-border-width: 1.5;
-            """
+          styleClass += "create-game-panel-slider-text"
         }
 
         val slider = new Slider {
@@ -104,14 +80,7 @@ object CreateGamePanel {
           hgrow = Priority.Always
           showTickMarks = false
           showTickLabels = false
-          style =
-            """
-              -fx-accent: #d4af37;
-              -fx-control-inner-background: rgba(0, 0, 0, 0.5);
-              -fx-focus-color: transparent;
-              -fx-faint-focus-color: transparent;
-              -fx-padding: 10px 0;
-            """
+          styleClass += "create-game-panel-slider"
         }
 
         slider.value.onChange { (_, _, newVal) =>
@@ -186,6 +155,7 @@ object CreateGamePanel {
       children = Seq(
         titleRow,
         playerNameField,
+        customRoomName,
         modeToggle,
         maxPlayersRow,
         buyInRow,

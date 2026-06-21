@@ -1,0 +1,19 @@
+.main-scene {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 70%, #2e7d32, #1b5e20);
+}
+
+.button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.title {
+    -fx-font-family: "Noto Serif Display", serif;
+    -fx-font-size: 56px;
+    -fx-font-weight: 700;
+    -fx-text-fill: white;
+}

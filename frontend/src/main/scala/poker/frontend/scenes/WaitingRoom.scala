@@ -9,8 +9,9 @@ import poker.frontend.widgets.Shared.ReturnButton
 object WaitingRoom {
   def apply(): Scene = {
     new Scene {
+      stylesheets = Seq(new java.io.File("src/main/scala/poker/frontend/styles/waiting-room-scene.css").toURI.toString)
       root = new StackPane {
-        style = "-fx-background-color: radial-gradient(center 50% 50%, radius 70%, #2e7d32, #1b5e20);"
+        styleClass += "waiting-room-scene"
 
         val mainContent = new BorderPane {
           padding = Insets(20)
