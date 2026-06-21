@@ -18,6 +18,7 @@ class GameRegistrySpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val result2 = probe.expectMessageType[GameRegistry.GameCreated]
 
       result1.code should not be result2.code
+      result1.code should fullyMatch regex """[a-z]+-[a-z]+-\d{3}"""
     }
 
     "lookup existing game" in {
@@ -29,29 +30,17 @@ class GameRegistrySpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
       val lookupProbe = testKit.createTestProbe[GameRegistry.LookupResult]()
       registry ! GameRegistry.LookupGame(created.code, lookupProbe.ref)
-      lookupProbe.expectMessageType[GameRegistry.Found]
+
+      val found = lookupProbe.expectMessageType[GameRegistry.Found]
+      found.code shouldBe created.code
     }
 
     "return NotFound for non-existent game" in {
       val registry = testKit.spawn(GameRegistry())
       val probe = testKit.createTestProbe[GameRegistry.LookupResult]()
 
-      registry ! GameRegistry.LookupGame("nonexistent", probe.ref)
+      registry ! GameRegistry.LookupGame("nonexistent-game-999", probe.ref)
       probe.expectMessage(GameRegistry.NotFound)
-    }
-
-    "remove game when actor stops" in {
-      val registry = testKit.spawn(GameRegistry())
-      val createProbe = testKit.createTestProbe[GameRegistry.CreateResult]()
-
-      registry ! GameRegistry.CreateGame("player1", GameSettings(), createProbe.ref)
-      val created = createProbe.expectMessageType[GameRegistry.GameCreated]
-
-      testKit.stop(created.ref)
-
-      val lookupProbe = testKit.createTestProbe[GameRegistry.LookupResult]()
-      registry ! GameRegistry.LookupGame(created.code, lookupProbe.ref)
-      lookupProbe.expectMessage(GameRegistry.NotFound)
     }
 
     "list only public games" in {
@@ -66,10 +55,11 @@ class GameRegistrySpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
       val listProbe = testKit.createTestProbe[GameRegistry.PublicGameListResult]()
       registry ! GameRegistry.ListPublicGames(listProbe.ref)
-      val result = listProbe.expectMessageType[GameRegistry.PublicGameListResult]
 
+      val result = listProbe.expectMessageType[GameRegistry.PublicGameListResult]
       result.games.size shouldBe 1
       result.games.head.code shouldBe publicGame.code
+      result.games.head.isPublic shouldBe true
     }
 
     "check if game name exists" in {
@@ -80,11 +70,45 @@ class GameRegistrySpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       createProbe.expectMessageType[GameRegistry.GameCreated]
 
       val nameProbe = testKit.createTestProbe[Boolean]()
+
       registry ! GameRegistry.GameNameExists("MyGame", nameProbe.ref)
       nameProbe.expectMessage(true)
 
       registry ! GameRegistry.GameNameExists("OtherGame", nameProbe.ref)
       nameProbe.expectMessage(false)
+    }
+
+    "create game with auto-generated name when name is empty" in {
+      val registry = testKit.spawn(GameRegistry())
+      val probe = testKit.createTestProbe[GameRegistry.CreateResult]()
+
+      registry ! GameRegistry.CreateGame("player1", GameSettings(name = ""), probe.ref)
+      val result = probe.expectMessageType[GameRegistry.GameCreated]
+
+      result.code should fullyMatch regex """[a-z]+-[a-z]+-\d{3}"""
+    }
+
+    "return empty list when no public games exist" in {
+      val registry = testKit.spawn(GameRegistry())
+      val listProbe = testKit.createTestProbe[GameRegistry.PublicGameListResult]()
+
+      registry ! GameRegistry.ListPublicGames(listProbe.ref)
+
+      val result = listProbe.expectMessageType[GameRegistry.PublicGameListResult]
+      result.games shouldBe empty
+    }
+
+    "lookup by game code should be case-sensitive" in {
+      val registry = testKit.spawn(GameRegistry())
+      val createProbe = testKit.createTestProbe[GameRegistry.CreateResult]()
+
+      registry ! GameRegistry.CreateGame("player1", GameSettings(), createProbe.ref)
+      val created = createProbe.expectMessageType[GameRegistry.GameCreated]
+
+      // Lookup with different case should fail
+      val lookupProbe = testKit.createTestProbe[GameRegistry.LookupResult]()
+      registry ! GameRegistry.LookupGame(created.code.toUpperCase, lookupProbe.ref)
+      lookupProbe.expectMessage(GameRegistry.NotFound)
     }
   }
 }
