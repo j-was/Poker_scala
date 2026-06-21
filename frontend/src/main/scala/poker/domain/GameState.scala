@@ -4,12 +4,12 @@ enum GameStatus:
   case WaitingForPlayers, Playing, Finished
 
 case class GameSettings(
-                         name: String = "",           // empty = auto-generated
+                         name: String = "",
                          smallBlind: Int = 10,
                          bigBlind: Int = 20,
                          initialChips: Int = 1000,
-                         isPublic: Boolean = false,
-                         maxPlayers: Int = 9
+                         isPublic: Boolean = true,
+                         maxPlayers: Int = 6
                        )
 
 enum HandCategory(val strength: Int):
