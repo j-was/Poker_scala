@@ -79,12 +79,12 @@ class HandEvaluatorSpec extends AnyFlatSpec with Matchers {
       Card(Rank.Five, Suit.Diamonds), Card(Rank.Six, Suit.Hearts), Card(Rank.Seven, Suit.Diamonds),
       Card(Rank.Two, Suit.Hearts), Card(Rank.Two, Suit.Clubs)
     )
-    
+
     val r1 = HandEvaluator.evaluate(p1, board)
     r1.category.shouldBe(HandCategory.Straight)
     r1.tieBreakers.shouldBe(List(8))
     r1.bestCards.size.shouldBe(5)
-    
+
     val r2 = HandEvaluator.evaluate(p2, board)
     r2.category.shouldBe(HandCategory.Straight)
     r2.tieBreakers.shouldBe(List(9))
@@ -99,7 +99,7 @@ class HandEvaluatorSpec extends AnyFlatSpec with Matchers {
       Card(Rank.Three, Suit.Diamonds), Card(Rank.Four, Suit.Hearts), Card(Rank.Five, Suit.Diamonds),
       Card(Rank.Nine, Suit.Hearts), Card(Rank.Ten, Suit.Clubs)
     )
-    
+
     val r1 = HandEvaluator.evaluate(p1, board)
     r1.category.shouldBe(HandCategory.Straight)
     r1.tieBreakers.shouldBe(List(5)) // High card of the straight is 5
@@ -118,7 +118,7 @@ class HandEvaluatorSpec extends AnyFlatSpec with Matchers {
     val r1 = HandEvaluator.evaluate(p1, board)
     r1.category.shouldBe(HandCategory.Flush)
     r1.bestCards.size.shouldBe(5)
-    
+
     val winners = determineWinners(Map("1" -> p1, "2" -> p2), board)
     winners.shouldBe(List("2"))
   }
@@ -158,7 +158,7 @@ class HandEvaluatorSpec extends AnyFlatSpec with Matchers {
       Card(Rank.Queen, Suit.Spades), Card(Rank.Jack, Suit.Spades), Card(Rank.Ten, Suit.Spades),
       Card(Rank.Two, Suit.Hearts), Card(Rank.Three, Suit.Diamonds)
     )
-    
+
     val rank = HandEvaluator.evaluate(hole, board)
     rank.category.shouldBe(HandCategory.StraightFlush)
     rank.tieBreakers.shouldBe(List(14))
@@ -193,7 +193,7 @@ class HandEvaluatorSpec extends AnyFlatSpec with Matchers {
     r1 shouldBe r2
     r1.hashCode shouldBe r2.hashCode
 
-    r1 shouldNot be (r3)
+    r1 shouldNot be(r3)
     r1.equals("not a hand rank") shouldBe false
   }
 }

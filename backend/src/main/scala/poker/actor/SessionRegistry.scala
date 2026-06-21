@@ -11,7 +11,7 @@ import poker.domain.toClientView
  * which game each player is in.
  */
 object SessionRegistry {
-  
+
   sealed trait Command
 
   case class Register(playerId: String, sender: ActorRef[ServerMessage]) extends Command
@@ -23,7 +23,9 @@ object SessionRegistry {
   case class LeftGame(playerId: String, gameCode: String) extends Command
 
   case class SendTo(playerId: String, msg: ServerMessage) extends Command
+
   case class GetJoinedGame(playerId: String, replyTo: ActorRef[JoinedGameResult]) extends Command
+
   case class JoinedGameResult(code: Option[String])
 
   case class BroadcastToGame(
@@ -33,6 +35,7 @@ object SessionRegistry {
                             ) extends Command
 
   case class BroadcastRaw(gameCode: String, msg: ServerMessage) extends Command
+
   case class BroadcastRawExcept(gameCode: String, exceptPlayerId: String, msg: ServerMessage)
     extends Command
 

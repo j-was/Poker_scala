@@ -64,7 +64,7 @@ object WebSocketServer {
         done.onComplete(_ => connectionActor ! ClientConnection.ConnectionClosed)
       }
   }
-  
+
   def start(
              host: String,
              port: Int,

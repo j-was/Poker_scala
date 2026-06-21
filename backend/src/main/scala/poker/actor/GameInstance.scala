@@ -10,37 +10,52 @@ import poker.domain.*
  * This is the actor shell; all game logic lives in poker.domain.PokerEngine.
  *
  * AutoFoldService integration (optional):
- *   After each turn advance, notifies AutoFoldService so disconnected players
- *   are automatically folded after a grace period.
+ * After each turn advance, notifies AutoFoldService so disconnected players
+ * are automatically folded after a grace period.
  */
 object GameInstance:
 
   sealed trait Command
 
-  case class JoinGame(playerId: String, name: String, replyTo: ActorRef[Response])  extends Command
-  case class StartGame(replyTo: ActorRef[Response])                                   extends Command
-  case class Fold(playerId: String, replyTo: ActorRef[Response])                      extends Command
-  case class Call(playerId: String, replyTo: ActorRef[Response])                      extends Command
-  case class Check(playerId: String, replyTo: ActorRef[Response])                     extends Command
-  case class Raise(playerId: String, amount: Int, replyTo: ActorRef[Response])        extends Command
-  case class LeaveGame(playerId: String, replyTo: ActorRef[Response])                 extends Command
-  case class GetState(replyTo: ActorRef[GameState])                                   extends Command
-  case class UpdateSettings(settings: GameSettings, replyTo: ActorRef[Response])      extends Command
-  case class UpdatePlayerCount(delta: Int)                                            extends Command 
+  case class JoinGame(playerId: String, name: String, replyTo: ActorRef[Response]) extends Command
+
+  case class StartGame(replyTo: ActorRef[Response]) extends Command
+
+  case class Fold(playerId: String, replyTo: ActorRef[Response]) extends Command
+
+  case class Call(playerId: String, replyTo: ActorRef[Response]) extends Command
+
+  case class Check(playerId: String, replyTo: ActorRef[Response]) extends Command
+
+  case class Raise(playerId: String, amount: Int, replyTo: ActorRef[Response]) extends Command
+
+  case class LeaveGame(playerId: String, replyTo: ActorRef[Response]) extends Command
+
+  case class GetState(replyTo: ActorRef[GameState]) extends Command
+
+  case class UpdateSettings(settings: GameSettings, replyTo: ActorRef[Response]) extends Command
+
+  case class UpdatePlayerCount(delta: Int) extends Command
 
   sealed trait Response
-  case class GameJoined(playerId: String, state: GameState)                           extends Response
-  case class GameStarted(state: GameState)                                            extends Response
-  case class ActionSuccess(state: GameState)                                          extends Response
-  case class GameOver(winnerId: String, state: GameState)                             extends Response
-  case class Error(msg: String)                                                       extends Response
-  case class SettingsUpdated(state: GameState)                                        extends Response
+
+  case class GameJoined(playerId: String, state: GameState) extends Response
+
+  case class GameStarted(state: GameState) extends Response
+
+  case class ActionSuccess(state: GameState) extends Response
+
+  case class GameOver(winnerId: String, state: GameState) extends Response
+
+  case class Error(msg: String) extends Response
+
+  case class SettingsUpdated(state: GameState) extends Response
 
   def apply(
-             id:              String,
-             settings:        GameSettings                                = GameSettings(),
-             autoFoldService: Option[ActorRef[AutoFoldService.Command]]  = None,
-             sessionRegistry: Option[ActorRef[SessionRegistry.Command]]  = None
+             id: String,
+             settings: GameSettings = GameSettings(),
+             autoFoldService: Option[ActorRef[AutoFoldService.Command]] = None,
+             sessionRegistry: Option[ActorRef[SessionRegistry.Command]] = None
            ): Behavior[Command] =
     Behaviors.setup { ctx =>
       waitingForPlayers(
@@ -54,26 +69,26 @@ object GameInstance:
   // ── Internal helper ────────────────────────────────────────────────────────
 
   private def notifyAutoFold(
-                              gameId:          String,
-                              state:           GameState,
+                              gameId: String,
+                              state: GameState,
                               autoFoldService: Option[ActorRef[AutoFoldService.Command]],
                               sessionRegistry: Option[ActorRef[SessionRegistry.Command]],
-                              self:            ActorRef[Command]
+                              self: ActorRef[Command]
                             ): Unit =
     for
-      svc      <- autoFoldService
+      svc <- autoFoldService
       sessions <- sessionRegistry
-      player   <- state.currentPlayer
+      player <- state.currentPlayer
     do
       svc ! AutoFoldService.TurnAdvanced(gameId, player.id, self, sessions)
 
   // ── Phase: waiting for players ─────────────────────────────────────────────
 
   private def waitingForPlayers(
-                                 state:           GameState,
+                                 state: GameState,
                                  autoFoldService: Option[ActorRef[AutoFoldService.Command]],
                                  sessionRegistry: Option[ActorRef[SessionRegistry.Command]],
-                                 self:            ActorRef[Command]
+                                 self: ActorRef[Command]
                                ): Behavior[Command] = Behaviors.receiveMessage {
 
     case JoinGame(playerId, name, replyTo) =>
@@ -82,7 +97,7 @@ object GameInstance:
         Behaviors.same
       else
         val newPlayer = Player(playerId, name, state.settings.initialChips)
-        val newState  = state.copy(players = state.players :+ newPlayer)
+        val newState = state.copy(players = state.players :+ newPlayer)
         replyTo ! GameJoined(playerId, newState)
         waitingForPlayers(newState, autoFoldService, sessionRegistry, self)
 
@@ -108,8 +123,8 @@ object GameInstance:
     case UpdateSettings(newSettings, replyTo) =>
       val updatedState = state.copy(settings = newSettings)
       replyTo ! SettingsUpdated(updatedState)
-      waitingForPlayers(updatedState, autoFoldService, sessionRegistry, self)  
-      
+      waitingForPlayers(updatedState, autoFoldService, sessionRegistry, self)
+
     case _ =>
       Behaviors.unhandled
   }
@@ -117,10 +132,10 @@ object GameInstance:
   // ── Phase: between hands ───────────────────────────────────────────────────
 
   private def betweenHands(
-                            state:           GameState,
+                            state: GameState,
                             autoFoldService: Option[ActorRef[AutoFoldService.Command]],
                             sessionRegistry: Option[ActorRef[SessionRegistry.Command]],
-                            self:            ActorRef[Command]
+                            self: ActorRef[Command]
                           ): Behavior[Command] = Behaviors.receiveMessage {
 
     case JoinGame(_, _, replyTo) =>
@@ -147,7 +162,7 @@ object GameInstance:
     case UpdateSettings(newSettings, replyTo) =>
       val updatedState = state.copy(settings = newSettings)
       replyTo ! SettingsUpdated(updatedState)
-      betweenHands(updatedState, autoFoldService, sessionRegistry, self)  
+      betweenHands(updatedState, autoFoldService, sessionRegistry, self)
 
     case _ =>
       Behaviors.unhandled
@@ -156,10 +171,10 @@ object GameInstance:
   // ── Phase: playing a hand ──────────────────────────────────────────────────
 
   private def playing(
-                       state:           GameState,
+                       state: GameState,
                        autoFoldService: Option[ActorRef[AutoFoldService.Command]],
                        sessionRegistry: Option[ActorRef[SessionRegistry.Command]],
-                       self:            ActorRef[Command]
+                       self: ActorRef[Command]
                      ): Behavior[Command] = Behaviors.receiveMessage {
 
     case GetState(replyTo) =>
@@ -181,24 +196,24 @@ object GameInstance:
     case call: Call =>
       handleAction(state, call.playerId, call.replyTo, autoFoldService, sessionRegistry, self) { (p, st) =>
         val amountToCall = st.currentHighestBet - p.currentBet
-        val actualCall   = math.min(amountToCall, p.chips)
+        val actualCall = math.min(amountToCall, p.chips)
         st.updatePlayer(p.copy(
-          chips      = p.chips - actualCall,
+          chips = p.chips - actualCall,
           currentBet = p.currentBet + actualCall,
-          hasActed   = true
+          hasActed = true
         ))
       }
 
     case raise: Raise =>
       handleAction(state, raise.playerId, raise.replyTo, autoFoldService, sessionRegistry, self) { (p, st) =>
         val amountToCall = st.currentHighestBet - p.currentBet
-        val totalAmount  = amountToCall + raise.amount
+        val totalAmount = amountToCall + raise.amount
         if totalAmount > p.chips then
           throw new IllegalArgumentException("Not enough chips to raise")
         st.updatePlayer(p.copy(
-          chips      = p.chips - totalAmount,
+          chips = p.chips - totalAmount,
           currentBet = p.currentBet + totalAmount,
-          hasActed   = true
+          hasActed = true
         )).copy(currentHighestBet = st.currentHighestBet + raise.amount)
       }
 
@@ -216,12 +231,12 @@ object GameInstance:
   // ── Central action handler ─────────────────────────────────────────────────
 
   private def handleAction(
-                            state:           GameState,
-                            playerId:        String,
-                            replyTo:         ActorRef[Response],
+                            state: GameState,
+                            playerId: String,
+                            replyTo: ActorRef[Response],
                             autoFoldService: Option[ActorRef[AutoFoldService.Command]],
                             sessionRegistry: Option[ActorRef[SessionRegistry.Command]],
-                            self:            ActorRef[Command]
+                            self: ActorRef[Command]
                           )(action: (Player, GameState) => GameState): Behavior[Command] =
     state.currentPlayer.filter(_.id == playerId) match
       case None =>
@@ -229,7 +244,7 @@ object GameInstance:
         Behaviors.same
       case Some(currentPlayer) =>
         try
-          val stAfterAction  = action(currentPlayer, state)
+          val stAfterAction = action(currentPlayer, state)
           val stWithNextTurn = stAfterAction.advanceTurn()
 
           val finalState =

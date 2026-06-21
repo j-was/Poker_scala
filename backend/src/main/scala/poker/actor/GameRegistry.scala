@@ -32,29 +32,39 @@ object GameRegistry {
       code = s"$adj-$noun-$digits"
     code
   }
-  
+
   sealed trait Command
+
   case class CreateGame(
                          requesterId: String,
                          settings: GameSettings,
                          replyTo: ActorRef[CreateResult]
                        ) extends Command
+
   case class LookupGame(
                          code: String,
                          replyTo: ActorRef[LookupResult]
                        ) extends Command
+
   case class RemoveGame(code: String) extends Command
+
   case class ListPublicGames(replyTo: ActorRef[PublicGameListResult]) extends Command
+
   case class GameNameExists(name: String, replyTo: ActorRef[Boolean]) extends Command
+
   case class PublicGameListResult(games: List[PublicGameInfo])
-  
+
 
   sealed trait CreateResult
+
   case class GameCreated(code: String, ref: ActorRef[GameInstance.Command]) extends CreateResult
+
   sealed trait LookupResult
+
   case class Found(code: String, ref: ActorRef[GameInstance.Command]) extends LookupResult
+
   case object NotFound extends LookupResult
-  
+
   def apply(
              autoFoldService: Option[ActorRef[AutoFoldService.Command]] = None,
              sessionRegistry: Option[ActorRef[SessionRegistry.Command]] = None

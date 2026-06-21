@@ -14,7 +14,7 @@ class ClientViewSpec extends AnyFlatSpec with Matchers {
       board = board,
       players = List(
         Player("p1", "Alice", 980, Some(p1Cards)),
-        Player("p2", "Bob",   980, Some(p2Cards))
+        Player("p2", "Bob", 980, Some(p2Cards))
       )
     )
 

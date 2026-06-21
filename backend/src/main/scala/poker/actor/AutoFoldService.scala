@@ -10,7 +10,7 @@ import scala.concurrent.duration.*
  */
 
 object AutoFoldService {
-  
+
   val AutoFoldDelay: FiniteDuration = 30.seconds
 
   sealed trait Command
@@ -23,7 +23,7 @@ object AutoFoldService {
                          ) extends Command
 
   case class CancelAutoFold(gameCode: String) extends Command
-  
+
   private case class DoCheck(
                               gameCode: String,
                               playerId: String,
@@ -37,13 +37,13 @@ object AutoFoldService {
                                       gameRef: ActorRef[GameInstance.Command],
                                       isConnected: Boolean
                                     ) extends Command
-  
+
   private case class DiscardResponse(r: GameInstance.Response) extends Command
 
   def apply(): Behavior[Command] = {
     Behaviors.withTimers { timers =>
       Behaviors.setup { ctx =>
-        
+
         val discardAdapter: ActorRef[GameInstance.Response] =
           ctx.messageAdapter[GameInstance.Response](DiscardResponse.apply)
 
@@ -78,10 +78,10 @@ object AutoFoldService {
           }
 
           case ConnectedResult(_, _, _, true) =>
-            Behaviors.same 
+            Behaviors.same
 
           case DiscardResponse(_) =>
-            Behaviors.same 
+            Behaviors.same
         }
       }
     }

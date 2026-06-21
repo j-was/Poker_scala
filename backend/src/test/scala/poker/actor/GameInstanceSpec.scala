@@ -16,18 +16,18 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
       game ! GameInstance.JoinGame("p2", "Player 2", probe.ref)
       val joined2 = probe.expectMessageType[GameInstance.GameJoined]
-      
+
       joined2.state.players.size shouldBe 2
 
       game ! GameInstance.StartGame(probe.ref)
       val started = probe.expectMessageType[GameInstance.GameStarted]
-      
+
       started.state.board shouldBe Board.PreFlop
       started.state.players.foreach { p =>
         p.holeCards.isDefined shouldBe true
       }
     }
-    
+
     "play a simple pre-flop round with folds" in {
       val game = testKit.spawn(GameInstance("table-2"))
       val probe = testKit.createTestProbe[GameInstance.Response]()
@@ -36,16 +36,16 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       probe.expectMessageType[GameInstance.GameJoined]
       game ! GameInstance.JoinGame("p2", "P2", probe.ref)
       probe.expectMessageType[GameInstance.GameJoined]
-      
+
       game ! GameInstance.StartGame(probe.ref)
       val started = probe.expectMessageType[GameInstance.GameStarted]
-      
+
       val nextPlayerId = started.state.currentPlayer.get.id
       val otherPlayerId = started.state.players.find(_.id != nextPlayerId).get.id
-      
+
       game ! GameInstance.Fold(nextPlayerId, probe.ref)
       val success = probe.expectMessageType[GameInstance.ActionSuccess]
-      
+
       success.state.status shouldBe GameStatus.WaitingForPlayers
       success.state.players.find(_.id == otherPlayerId).get.chips > 1000 shouldBe true
     }
@@ -60,16 +60,16 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       probe.expectMessageType[GameInstance.GameJoined]
       game ! GameInstance.JoinGame("p3", "P3", probe.ref)
       probe.expectMessageType[GameInstance.GameJoined]
-      
+
       game ! GameInstance.StartGame(probe.ref)
       val started = probe.expectMessageType[GameInstance.GameStarted]
-      
+
       val next1 = started.state.currentPlayer.get.id
       next1 shouldBe "p2"
 
       game ! GameInstance.Raise("p2", 80, probe.ref)
       val action1 = probe.expectMessageType[GameInstance.ActionSuccess]
-      
+
       val next2 = action1.state.currentPlayer.get.id
       next2 shouldBe "p3"
 

@@ -4,6 +4,7 @@ import scala.util.Random
 
 case class Deck(cards: List[Card]):
   def shuffle: Deck = Deck(Random.shuffle(cards))
+
   def draw(n: Int): (List[Card], Deck) = (cards.take(n), Deck(cards.drop(n)))
 
 object Deck:

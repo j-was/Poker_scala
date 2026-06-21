@@ -67,7 +67,7 @@ class ProtocolSpec extends AnyFlatSpec with Matchers {
 
   it should "serialize and deserialize Board" in {
     roundtrip[Board](Board.PreFlop)
-    
+
     val flop = Board.Flop(Card(Rank.Ace, Suit.Spades), Card(Rank.King, Suit.Hearts), Card(Rank.Queen, Suit.Diamonds))
     roundtrip[Board](flop)
 
