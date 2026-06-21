@@ -4,7 +4,7 @@ import scalafx.scene.control.Button
 import poker.frontend.ScenesNavigator
 
 object ReturnButton {
-  def apply(): Button = {
+  def apply(onReturn: () => Unit = () => ScenesNavigator.showMainStage()): Button = {
     new Button("Wróć") {
       style =
         """
@@ -14,7 +14,7 @@ object ReturnButton {
           -fx-font-weight: bold;
           -fx-cursor: hand;
         """
-      onAction = _ => ScenesNavigator.showMainStage()
+      onAction = _ => onReturn()
     }
   }
 }

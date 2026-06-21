@@ -6,6 +6,8 @@ import scalafx.geometry.Insets
 import poker.frontend.widgets.WaitingRoom.WaitingRoomPanel
 import poker.frontend.widgets.Shared.ReturnButton
 import poker.domain.ClientGameState
+import poker.frontend.ScenesNavigator
+import poker.frontend.client.PokerSession
 
 object WaitingRoom {
   def apply(code: String, myPlayerId: String, state: ClientGameState): Scene = {
@@ -18,7 +20,10 @@ object WaitingRoom {
           padding = Insets(20)
 
           top = new BorderPane {
-            left = ReturnButton()
+            left = ReturnButton(() => {
+              PokerSession.leaveGame()
+              ScenesNavigator.showMainStage()
+            })
           }
 
           center = new StackPane {
