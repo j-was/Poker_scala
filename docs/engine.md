@@ -16,7 +16,14 @@ import poker.domain.GameSettings
 
 // Spawn a table
 val table = system.spawn(
-  GameInstance("table-1", GameSettings(smallBlind = 10, bigBlind = 20, initialChips = 1000)),
+  GameInstance("table-1", GameSettings(
+    name = "Friday Night",
+    smallBlind = 10,
+    bigBlind = 20,
+    initialChips = 1000,
+    isPublic = true,
+    maxPlayers = 6
+  )),
   "table-1"
 )
 
@@ -28,6 +35,7 @@ table ! Call("player-id", replyTo)
 table ! Check("player-id", replyTo)
 table ! Raise("player-id", amount = 50, replyTo)
 table ! LeaveGame("player-id", replyTo)
+table ! UpdateSettings(GameSettings(name = "New Name", smallBlind = 25), replyTo)
 table ! GetState(replyTo)  // returns raw GameState
 ```
 
@@ -40,6 +48,7 @@ case GameJoined(playerId, state)        // player joined successfully
 case GameStarted(state)                 // hand started, cards dealt, blinds posted
 case ActionSuccess(state)               // action accepted, hand ended, next hand pending
 case GameOver(winnerId, state)          // tournament finished – winnerId has all the chips
+case SettingsUpdated(state)             // settings changed, new state returned
 case Error(msg: String)                 // rejected – see error table below
 ```
 
@@ -61,7 +70,7 @@ def broadcastState(state: GameState): Unit =
   }
 ```
 
-`toClientView(playerId)` hides other players' cards. The requesting player gets `myHoleCards`, `myHandCategory`, and `myBestCards`. Everyone else gets `hasCards: true/false` only.
+> `toClientView(playerId)` hides other players' cards. The requesting player gets `myHoleCards`, `myHandCategory`, and `myBestCards`. Everyone else gets `hasCards: true/false` only.
 
 ---
 
@@ -81,7 +90,14 @@ val sockets: Map[String, WebSocket] = ...  // playerId -> WebSocket
 
 // 1. Create a table (e.g. when a lobby room is opened)
 val table = system.spawn(
-  GameInstance("table-1", GameSettings(smallBlind = 10, bigBlind = 20, initialChips = 1000)),
+  GameInstance("table-1", GameSettings(
+    name = "Friday Night",
+    smallBlind = 10,
+    bigBlind = 20,
+    initialChips = 1000,
+    isPublic = true,
+    maxPlayers = 6
+  )),
   "table-1"
 )
 
@@ -121,6 +137,19 @@ def onRaise(playerId: String, amount: Int): Unit =
     case Error(msg)                => sendError(playerId, msg)
   }
 
+// 6. Host updates game settings (only between hands, before first hand)
+def onUpdateSettings(): Unit =
+  table.ask(UpdateSettings(GameSettings(
+    name = "Serious Friday",
+    smallBlind = 50,
+    bigBlind = 100,
+    isPublic = true,
+    maxPlayers = 4
+  ), _)).foreach {
+    case SettingsUpdated(state) => broadcastState(state)
+    case Error(msg)             => sendError(hostPlayerId, msg)
+  }
+
 // Helpers
 def broadcastState(state: GameState): Unit =
   sockets.foreach { (playerId, socket) =>
@@ -140,11 +169,13 @@ def sendError(playerId: String, msg: String): Unit =
 
 ## Error messages
 
-| Situation | `msg` |
-|-----------|-------|
-| Not your turn | `"Not your turn"` |
-| Check when someone raised | `"Cannot check, must call or raise"` |
-| Raise more than you have | `"Not enough chips to raise"` |
-| Duplicate player ID | `"Player already joined"` |
-| Start with < 2 players | `"Not enough players to start"` |
-| Leave during a hand | `"Cannot leave during a hand. Wait for the hand to end."` |
+| Situation                     | `msg`                                                     |
+| ----------------------------- | --------------------------------------------------------- |
+| Not your turn                 | `"Not your turn"`                                         |
+| Check when someone raised     | `"Cannot check, must call or raise"`                      |
+| Raise more than you have      | `"Not enough chips to raise"`                             |
+| Duplicate player ID           | `"Player already joined"`                                 |
+| Start with < 2 players        | `"Not enough players to start"`                           |
+| Leave during a hand           | `"Cannot leave during a hand. Wait for the hand to end."` |
+| UpdateSettings during a hand  | `"Cannot update settings during a hand"`                  |
+| UpdateSettings by non-creator | `"Only the game creator can update settings"`             |

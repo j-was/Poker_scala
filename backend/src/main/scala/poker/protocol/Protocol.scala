@@ -20,6 +20,8 @@ object ClientMessage:
   case class Raise(code: String, amount: Int)                 extends ClientMessage
   case class LeaveGame(code: String)                          extends ClientMessage
   case object Ping                                            extends ClientMessage
+  case class ListPublicGames()                                extends ClientMessage
+  case class UpdateSettings(code: String, settings: GameSettings) extends ClientMessage
 
 // ─── Server → Client ─────────────────────────────────────────────────────────
 sealed trait ServerMessage
@@ -36,6 +38,18 @@ object ServerMessage:
   case class PlayerReconnected(code: String, playerId: String, name: String) extends ServerMessage
   case class Error(message: String)                                  extends ServerMessage
   case object Pong                                                   extends ServerMessage
+  case class PublicGameList(games: List[PublicGameInfo]) extends ServerMessage
+  case class SettingsUpdated(code: String, state: ClientGameState) extends ServerMessage
+
+case class PublicGameInfo(
+                           code: String,
+                           name: String,
+                           playerCount: Int,
+                           maxPlayers: Int,
+                           smallBlind: Int,
+                           bigBlind: Int,
+                           isPublic: Boolean
+                         )
 
 // ─── JSON codecs ─────────────────────────────────────────────────────────────
 object JsonCodecs:
@@ -53,6 +67,8 @@ object JsonCodecs:
   given Decoder[GameStatus]   = Decoder.decodeString.emap(s => GameStatus.values.find(_.toString == s).toRight(s"Unknown status: $s"))
   given Encoder[GameSettings] = deriveEncoder
   given Decoder[GameSettings] = deriveDecoder
+  given Encoder[PublicGameInfo] = deriveEncoder
+  given Decoder[PublicGameInfo] = deriveDecoder
   
   given Encoder[Board] = Encoder.instance {
     case Board.PreFlop              => Json.obj("street" -> "PreFlop".asJson)
@@ -88,6 +104,8 @@ object JsonCodecs:
     case m: ClientMessage.Check     => Json.obj("type" -> "Check".asJson,      "code" -> m.code.asJson)
     case m: ClientMessage.Raise     => Json.obj("type" -> "Raise".asJson,      "code" -> m.code.asJson, "amount" -> m.amount.asJson)
     case m: ClientMessage.LeaveGame => Json.obj("type" -> "LeaveGame".asJson,  "code" -> m.code.asJson)
+    case m: ClientMessage.ListPublicGames => Json.obj("type" -> "ListPublicGames".asJson)
+    case m: ClientMessage.UpdateSettings  => Json.obj("type" -> "UpdateSettings".asJson, "code" -> m.code.asJson, "settings" -> m.settings.asJson)
     case ClientMessage.Ping         => Json.obj("type" -> "Ping".asJson)
   }
 
@@ -103,40 +121,46 @@ object JsonCodecs:
       case "Raise"     => for code <- cursor.downField("code").as[String]; amt <- cursor.downField("amount").as[Int] yield ClientMessage.Raise(code, amt)
       case "LeaveGame" => cursor.downField("code").as[String].map(ClientMessage.LeaveGame.apply)
       case "Ping"      => Right(ClientMessage.Ping)
+      case "ListPublicGames" => Right(ClientMessage.ListPublicGames())
+      case "UpdateSettings"  => for code <- cursor.downField("code").as[String]; settings <- cursor.downField("settings").as[GameSettings] yield ClientMessage.UpdateSettings(code, settings)
       case other       => Left(DecodingFailure(s"Unknown client message type: $other", cursor.history))
     }
   }
 
   // ── ServerMessage ──
   given Encoder[ServerMessage] = Encoder.instance {
-    case m: ServerMessage.Identified       => Json.obj("type" -> "Identified".asJson,       "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
-    case m: ServerMessage.GameCreated      => Json.obj("type" -> "GameCreated".asJson,      "code" -> m.code.asJson, "state" -> m.state.asJson)
-    case m: ServerMessage.GameJoined       => Json.obj("type" -> "GameJoined".asJson,       "code" -> m.code.asJson, "state" -> m.state.asJson)
-    case m: ServerMessage.GameStarted      => Json.obj("type" -> "GameStarted".asJson,      "code" -> m.code.asJson, "state" -> m.state.asJson)
-    case m: ServerMessage.StateUpdate      => Json.obj("type" -> "StateUpdate".asJson,      "code" -> m.code.asJson, "state" -> m.state.asJson)
-    case m: ServerMessage.GameOver         => Json.obj("type" -> "GameOver".asJson,         "code" -> m.code.asJson, "winnerId" -> m.winnerId.asJson, "winnerName" -> m.winnerName.asJson, "state" -> m.state.asJson)
-    case m: ServerMessage.PlayerJoined     => Json.obj("type" -> "PlayerJoined".asJson,     "code" -> m.code.asJson, "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
-    case m: ServerMessage.PlayerLeft       => Json.obj("type" -> "PlayerLeft".asJson,       "code" -> m.code.asJson, "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
+    case m: ServerMessage.Identified        => Json.obj("type" -> "Identified".asJson,       "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
+    case m: ServerMessage.GameCreated       => Json.obj("type" -> "GameCreated".asJson,      "code" -> m.code.asJson, "state" -> m.state.asJson)
+    case m: ServerMessage.GameJoined        => Json.obj("type" -> "GameJoined".asJson,       "code" -> m.code.asJson, "state" -> m.state.asJson)
+    case m: ServerMessage.GameStarted       => Json.obj("type" -> "GameStarted".asJson,      "code" -> m.code.asJson, "state" -> m.state.asJson)
+    case m: ServerMessage.StateUpdate       => Json.obj("type" -> "StateUpdate".asJson,      "code" -> m.code.asJson, "state" -> m.state.asJson)
+    case m: ServerMessage.GameOver          => Json.obj("type" -> "GameOver".asJson,         "code" -> m.code.asJson, "winnerId" -> m.winnerId.asJson, "winnerName" -> m.winnerName.asJson, "state" -> m.state.asJson)
+    case m: ServerMessage.PlayerJoined      => Json.obj("type" -> "PlayerJoined".asJson,     "code" -> m.code.asJson, "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
+    case m: ServerMessage.PlayerLeft        => Json.obj("type" -> "PlayerLeft".asJson,       "code" -> m.code.asJson, "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
     case m: ServerMessage.PlayerDisconnected=>Json.obj("type" -> "PlayerDisconnected".asJson,"code" -> m.code.asJson, "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
-    case m: ServerMessage.PlayerReconnected=> Json.obj("type" -> "PlayerReconnected".asJson, "code" -> m.code.asJson, "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
-    case m: ServerMessage.Error            => Json.obj("type" -> "Error".asJson,            "message" -> m.message.asJson)
-    case ServerMessage.Pong                => Json.obj("type" -> "Pong".asJson)
+    case m: ServerMessage.PlayerReconnected => Json.obj("type" -> "PlayerReconnected".asJson, "code" -> m.code.asJson, "playerId" -> m.playerId.asJson, "name" -> m.name.asJson)
+    case m: ServerMessage.Error             => Json.obj("type" -> "Error".asJson,            "message" -> m.message.asJson)
+    case m: ServerMessage.PublicGameList    => Json.obj("type" -> "PublicGameList".asJson, "games" -> m.games.asJson)
+    case m: ServerMessage.SettingsUpdated   => Json.obj("type" -> "SettingsUpdated".asJson, "code" -> m.code.asJson, "state" -> m.state.asJson)
+    case ServerMessage.Pong                 => Json.obj("type" -> "Pong".asJson)
   }
 
   given Decoder[ServerMessage] = Decoder.instance { cursor =>
     cursor.downField("type").as[String].flatMap {
-      case "Identified"        => for pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.Identified(pid, n)
-      case "GameCreated"       => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.GameCreated(code, st)
-      case "GameJoined"        => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.GameJoined(code, st)
-      case "GameStarted"       => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.GameStarted(code, st)
-      case "StateUpdate"       => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.StateUpdate(code, st)
-      case "GameOver"          => for code <- cursor.downField("code").as[String]; wid <- cursor.downField("winnerId").as[String]; wn <- cursor.downField("winnerName").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.GameOver(code, wid, wn, st)
-      case "PlayerJoined"      => for code <- cursor.downField("code").as[String]; pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.PlayerJoined(code, pid, n)
-      case "PlayerLeft"        => for code <- cursor.downField("code").as[String]; pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.PlayerLeft(code, pid, n)
-      case "PlayerDisconnected"=> for code <- cursor.downField("code").as[String]; pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.PlayerDisconnected(code, pid, n)
-      case "PlayerReconnected" => for code <- cursor.downField("code").as[String]; pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.PlayerReconnected(code, pid, n)
-      case "Error"             => cursor.downField("message").as[String].map(ServerMessage.Error.apply)
-      case "Pong"              => Right(ServerMessage.Pong)
-      case other               => Left(DecodingFailure(s"Unknown server message type: $other", cursor.history))
+      case "Identified"         => for pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.Identified(pid, n)
+      case "GameCreated"        => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.GameCreated(code, st)
+      case "GameJoined"         => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.GameJoined(code, st)
+      case "GameStarted"        => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.GameStarted(code, st)
+      case "StateUpdate"        => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.StateUpdate(code, st)
+      case "GameOver"           => for code <- cursor.downField("code").as[String]; wid <- cursor.downField("winnerId").as[String]; wn <- cursor.downField("winnerName").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.GameOver(code, wid, wn, st)
+      case "PlayerJoined"       => for code <- cursor.downField("code").as[String]; pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.PlayerJoined(code, pid, n)
+      case "PlayerLeft"         => for code <- cursor.downField("code").as[String]; pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.PlayerLeft(code, pid, n)
+      case "PlayerDisconnected" => for code <- cursor.downField("code").as[String]; pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.PlayerDisconnected(code, pid, n)
+      case "PlayerReconnected"  => for code <- cursor.downField("code").as[String]; pid <- cursor.downField("playerId").as[String]; n <- cursor.downField("name").as[String] yield ServerMessage.PlayerReconnected(code, pid, n)
+      case "Error"              => cursor.downField("message").as[String].map(ServerMessage.Error.apply)
+      case "Pong"               => Right(ServerMessage.Pong)
+      case "PublicGameList"     => cursor.downField("games").as[List[PublicGameInfo]].map(ServerMessage.PublicGameList.apply)
+      case "SettingsUpdated"    => for code <- cursor.downField("code").as[String]; st <- cursor.downField("state").as[ClientGameState] yield ServerMessage.SettingsUpdated(code, st)
+      case other                => Left(DecodingFailure(s"Unknown server message type: $other", cursor.history))
     }
   }

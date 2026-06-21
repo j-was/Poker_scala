@@ -184,4 +184,17 @@ class HandEvaluatorSpec extends AnyFlatSpec with Matchers {
     r.category.shouldBe(HandCategory.OnePair)
     r.bestCards.shouldBe(List(Card(Rank.Ace, Suit.Spades), Card(Rank.Ace, Suit.Hearts)))
   }
+
+  it should "correctly implement equals and hashCode in HandRank" in {
+    val r1 = HandRank(HandCategory.OnePair, List(14, 10), List(Card(Rank.Ace, Suit.Spades)))
+    val r2 = HandRank(HandCategory.OnePair, List(14, 10), List(Card(Rank.Ace, Suit.Hearts)))
+    val r3 = HandRank(HandCategory.TwoPair, List(14, 10), List(Card(Rank.Ace, Suit.Spades)))
+
+    r1 shouldBe r2
+    r1.hashCode shouldBe r2.hashCode
+
+    r1 shouldNot be (r3)
+    r1.equals("not a hand rank") shouldBe false
+  }
 }
+

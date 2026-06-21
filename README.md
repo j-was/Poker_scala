@@ -1,13 +1,32 @@
 # PokerScale
 
-App to play poker with your friends. Power up the desktop client and create a new private game on our server for your friends.
+Play Texas Hold'em with friends — host private games or join public tables. Playing each game with virtual money, no sign up required.
 
-Public games soon to come...
+A full-stack poker application built in Scala. Features a desktop client made with ScalaFX and a Pekko-powered server with WebSocket communication.
 
-This project is being developed for the **"Programming in Scala"** course at the Faculty of Mathematics and Information Science (MiNI), Warsaw University of Technology.
-It utilises ScalaFX framework for desktop side and Pekko for server.
+Developed for the **"Programming in Scala"** course at the **Faculty of Mathematics and Information Science (MiNI)**, Warsaw University of Technology.
 
-- [Andrzej Wrzesiński](https://github.com/ondrey-16) - desktop app
-- [Artur Szabelski](https://github.com/Artur112233) - desktop frontend
-- [Fryderyk Wolny](https://github.com/Frycek1) - poker game engine 
-- [Jerzy Wąsiewicz](https://github.com/j-was) - backend server 
+## Team
+
+| Member | Role |
+|--------|------|
+| [Andrzej Wrzesiński](https://github.com/ondrey-16) | Desktop app |
+| [Artur Szabelski](https://github.com/Artur112233) | Desktop frontend |
+| [Fryderyk Wolny](https://github.com/Frycek1) | Poker engine |
+| [Jerzy Wąsiewicz](https://github.com/j-was) | Backend server |
+
+## Features
+
+- **Texas Hold'em** with full betting rounds (pre-flop, flop, turn, river)
+- **Multiplayer** over WebSocket — real-time state updates
+- **Private games** — create a room, share the code with friends
+- **Public games** — browse and join open tables
+- **Reconnection** — drop out and rejoin without losing your seat
+- **Auto-fold** — inactive players are folded after 30s so the game never stalls
+- **Game settings** - adjust the blinds and initial chips to your liking
+
+## API
+
+**Full API documentation**: [`api.md`](./docs/api.md)
+
+Engine usage guide: [`engine.md`](./docs/engine.md)

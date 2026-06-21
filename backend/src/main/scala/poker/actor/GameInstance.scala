@@ -25,13 +25,16 @@ object GameInstance:
   case class Raise(playerId: String, amount: Int, replyTo: ActorRef[Response])        extends Command
   case class LeaveGame(playerId: String, replyTo: ActorRef[Response])                 extends Command
   case class GetState(replyTo: ActorRef[GameState])                                   extends Command
+  case class UpdateSettings(settings: GameSettings, replyTo: ActorRef[Response])      extends Command
+  case class UpdatePlayerCount(delta: Int)                                            extends Command 
 
   sealed trait Response
   case class GameJoined(playerId: String, state: GameState)                           extends Response
-  case class GameStarted(state: GameState)                                             extends Response
-  case class ActionSuccess(state: GameState)                                           extends Response
+  case class GameStarted(state: GameState)                                            extends Response
+  case class ActionSuccess(state: GameState)                                          extends Response
   case class GameOver(winnerId: String, state: GameState)                             extends Response
-  case class Error(msg: String)                                                        extends Response
+  case class Error(msg: String)                                                       extends Response
+  case class SettingsUpdated(state: GameState)                                        extends Response
 
   def apply(
              id:              String,
@@ -102,6 +105,11 @@ object GameInstance:
       replyTo ! ActionSuccess(newState)
       waitingForPlayers(newState, autoFoldService, sessionRegistry, self)
 
+    case UpdateSettings(newSettings, replyTo) =>
+      val updatedState = state.copy(settings = newSettings)
+      replyTo ! SettingsUpdated(updatedState)
+      waitingForPlayers(updatedState, autoFoldService, sessionRegistry, self)  
+      
     case _ =>
       Behaviors.unhandled
   }
@@ -135,6 +143,11 @@ object GameInstance:
     case GetState(replyTo) =>
       replyTo ! state
       Behaviors.same
+
+    case UpdateSettings(newSettings, replyTo) =>
+      val updatedState = state.copy(settings = newSettings)
+      replyTo ! SettingsUpdated(updatedState)
+      betweenHands(updatedState, autoFoldService, sessionRegistry, self)  
 
     case _ =>
       Behaviors.unhandled
