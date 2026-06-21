@@ -28,7 +28,7 @@ import scala.util.{Failure, Success}
  * }}}
  */
 val isDebug = false
-class PokerClient(serverUrl: String) {
+class PokerClient(serverUrl: String) extends PokerClientApi {
 
   private given system: ActorSystem[Nothing] =
     ActorSystem(Behaviors.empty, "poker-client")
