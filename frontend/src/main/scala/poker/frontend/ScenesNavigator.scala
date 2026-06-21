@@ -1,7 +1,7 @@
 package poker.frontend
 
 import poker.domain.*
-import poker.frontend.scenes.{CreateGame, Game, JoinGame, MainScene, WaitingRoom}
+import poker.frontend.scenes.{CreateGame, Game, JoinGame, MainScene, WaitingRoom, GameResult}
 import scalafx.application.JFXApp3
 
 object ScenesNavigator
@@ -84,5 +84,12 @@ object ScenesNavigator
     )
 
     showGameScene("test-room", "p1", state)
+  }
+
+  def showGameResult(code: String, winnerId: String, winnerName: String, state: ClientGameState): Unit = {
+    mainStage.scene = GameResult(code, winnerId, winnerName, state, onReturnToLobby = () => {
+      poker.frontend.client.PokerSession.leaveGame()
+      showMainStage()
+    })
   }
 }

@@ -114,7 +114,16 @@ class PokerSessionService(
     }
 
   def leaveGame(): Unit = {
-    sendWithCode(ClientMessage.LeaveGame.apply)
+    val prevCode = stateRef.get().currentCode
+
+    prevCode.foreach {
+      code => client.send(ClientMessage.LeaveGame(code))
+    }
+
+    stateRef.updateAndGet(_.copy(
+      currentCode = None,
+      currentGameState = None
+    ))
   }
 
   def updateSettings(settings: GameSettings): Unit = {
@@ -186,9 +195,15 @@ class PokerSessionService(
       case ServerMessage.GameStarted(code, state) => showState(code, state)
       case ServerMessage.StateUpdate(code, state) => showState(code, state)
       case ServerMessage.SettingsUpdated(code, state) => showState(code, state)
-      case ServerMessage.GameOver(code, _, _, state) => showState(code, state)
-      case ServerMessage.PublicGameList(games) => Platform.runLater { publicGamesHandlerRef.get()(games) }
-      case ServerMessage.Error(msg) => Platform.runLater {errorHandlerRef.get()(msg)}
+
+      case ServerMessage.GameOver(code, winnerId, winnerName, state) => {
+        stateRef.updateAndGet(_.copy(currentCode = Some(code), currentGameState = Some(state)))
+        runLater { () =>
+          ScenesNavigator.showGameResult(code, winnerId, winnerName, state)
+        }
+      }
+      case ServerMessage.PublicGameList(games) => runLater { () => publicGamesHandlerRef.get()(games) }
+      case ServerMessage.Error(msg) => runLater { () => errorHandlerRef.get()(msg) }
 
       case ServerMessage.PlayerJoined(code, playerId, name) =>
         stateRef.get().currentGameState.foreach { state =>
@@ -270,4 +285,10 @@ object PokerSession {
 
   def leaveGame(): Unit =
     service.leaveGame()
+
+  def listPublicGames(name: String, onLoaded: List[PublicGameInfo] => Unit, errorHandler: String => Unit): Unit =
+    service.listPublicGames(name, onLoaded, errorHandler)
+
+  def updateSettings(settings: GameSettings): Unit =
+    service.updateSettings(settings)
 }
