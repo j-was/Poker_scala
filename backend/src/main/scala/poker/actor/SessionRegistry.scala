@@ -6,10 +6,6 @@ import poker.domain.GameState
 import poker.protocol.ServerMessage
 import poker.domain.toClientView
 
-/**
- * Tracks the live WebSocket send-channel for each connected player and
- * which game each player is in.
- */
 object SessionRegistry {
 
   sealed trait Command
@@ -21,6 +17,8 @@ object SessionRegistry {
   case class JoinedGame(playerId: String, gameCode: String) extends Command
 
   case class LeftGame(playerId: String, gameCode: String) extends Command
+
+  case class GameRemoved(gameCode: String) extends Command
 
   case class SendTo(playerId: String, msg: ServerMessage) extends Command
 
@@ -59,6 +57,9 @@ object SessionRegistry {
       registry(sessions, playerGame + (playerId -> gameCode))
     case LeftGame(playerId, _) =>
       registry(sessions, playerGame - playerId)
+    case GameRemoved(gameCode) =>
+      val updatedPlayerGame = playerGame.filter { case (_, code) => code != gameCode }
+      registry(sessions, updatedPlayerGame)
     case SendTo(playerId, msg) =>
       sessions.get(playerId).foreach(_ ! msg)
       Behaviors.same
