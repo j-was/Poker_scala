@@ -1,15 +1,18 @@
 package poker.frontend.widgets.JoinGame
 
+import poker.frontend.ScenesNavigator
+import poker.frontend.client.PokerSession
+import poker.frontend.widgets.Shared.ErrorDialog
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{Label, ListCell, ListView, TextField}
+import scalafx.scene.control.{Label, ListCell, ListView, TextField, Button}
 import scalafx.scene.layout.{HBox, Priority, VBox}
 import poker.frontend.widgets.Shared.JoinButton
 import scalafx.scene.effect.DropShadow
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.paint.Color
 
-case class RoomInfo(name: String, players: String, state: String, buyIn: String)
+case class RoomInfo(code: String, name: String, players: String, state: String, buyIn: String)
 
 object PublicGamePanel {
   def apply(): VBox = {
@@ -45,6 +48,12 @@ object PublicGamePanel {
         children = Seq(dollarsLeft, titleLabel, dollarsRight)
       }
 
+      val usernameField = new TextField {
+        promptText = "Wpisz nazwę"
+        prefWidth = 400
+        styleClass += "public-game-panel-input"
+      }
+
       val usernameRow = new HBox {
         alignment = Pos.Center
         spacing = 15
@@ -54,12 +63,45 @@ object PublicGamePanel {
             prefWidth = 170
             alignment = Pos.CenterRight
           },
-          new TextField {
-            promptText = "Wpisz nazwę"
-            prefWidth = 400
-            styleClass += "public-game-panel-input"
-          }
+          usernameField
         )
+      }
+
+      val searchField = new TextField {
+        promptText = "Wpisz nazwę pokoju"
+        prefWidth = 400
+        styleClass += "public-game-panel-input"
+      }
+
+      val gamesData = ObservableBuffer[RoomInfo]()
+
+      val refreshButton = new Button("Odśwież") {
+        styleClass += "public-game-panel-input"
+        onAction = _ => {
+          val playerName = usernameField.text.value
+          if (playerName.trim.nonEmpty) {
+            PokerSession.listPublicGames(
+              playerName,
+              games => {
+                gamesData.clear()
+                val filterText = searchField.text.value.trim.toLowerCase
+                val filtered = if (filterText.isEmpty) games else games.filter(_.name.toLowerCase.contains(filterText))
+                filtered.foreach { g =>
+                  gamesData += RoomInfo(
+                    g.code,
+                    g.name,
+                    s"${g.playerCount}/${g.maxPlayers}",
+                    "Aktywna",
+                    s"Blindy: ${g.smallBlind}/${g.bigBlind}"
+                  )
+                }
+              },
+              msg => ErrorDialog.show(msg)
+            )
+          } else {
+            ErrorDialog.show("Wpisz nazwę gracza przed pobraniem listy!")
+          }
+        }
       }
 
       val searchRow = new HBox {
@@ -71,21 +113,12 @@ object PublicGamePanel {
             prefWidth = 170
             alignment = Pos.CenterRight
           },
-          new TextField {
-            promptText = "Wpisz nazwę pokoju"
-            prefWidth = 400
-            styleClass += "public-game-panel-input"
-          }
+          searchField,
+          refreshButton
         )
       }
 
-      val mockData = ObservableBuffer(
-        RoomInfo("Texas Hold'em Pro", "2/6 graczy", "Obecnie podczas rozgrywki", "5000$ wstępnego"),
-        RoomInfo("Szybki Poker", "5/8 graczy", "Oczekuje na graczy", "100$ wstępnego"),
-        RoomInfo("VIP Room", "4/6 graczy", "Obecnie podczas rozgrywki", "10000$ wstępnego")
-      )
-
-      val gamesList = new ListView[RoomInfo](mockData) {
+      val gamesList = new ListView[RoomInfo](gamesData) {
         vgrow = Priority.Always
         styleClass += "private-game-panel-games-list"
         cellFactory = (lv: ListView[RoomInfo]) => new ListCell[RoomInfo] {
@@ -136,9 +169,15 @@ object PublicGamePanel {
 
       val buttonRow = new HBox {
         alignment = Pos.BottomRight
+        spacing = 15
         children = Seq(
           JoinButton(() => {
+            val selectedRoom = gamesList.selectionModel.value.getSelectedItem
+            val playerName = usernameField.text.value
 
+            if (selectedRoom != null && playerName.trim.nonEmpty) {
+              PokerSession.joinGame(selectedRoom.code)
+            }
           })
         )
       }

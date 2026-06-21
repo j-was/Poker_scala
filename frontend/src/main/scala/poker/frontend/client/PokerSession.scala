@@ -1,9 +1,9 @@
 package poker.frontend.client
 
 import poker.domain.{ClientGameState, GameSettings}
-import poker.protocol.ClientMessage.CreateGame
-import poker.protocol.{ClientMessage, ServerMessage}
+import poker.protocol.{ClientMessage, ServerMessage, PublicGameInfo}
 import scalafx.application.Platform
+import poker.frontend.ScenesNavigator
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.prefs.Preferences
@@ -37,11 +37,14 @@ object PokerSession {
   private val errorHandlerRef =
     AtomicReference[String => Unit](msg => println(s"Server error: $msg"))
 
+  private val publicGamesHandlerRef =
+    AtomicReference[List[PublicGameInfo] => Unit](_ => ())
+
   client.onMessage(handleMessage)
 
   def configure(name: String, stateHandler: (String, String, ClientGameState) => Unit,
                 errorHandler: String => Unit = msg => println(s"Server error: $msg"))
-    : Unit = {
+  : Unit = {
     val cleanedName = if name.trim.nonEmpty then name.trim else "Player"
     val storedPlayerId = Option(prefs.get(s"playerId.$cleanedName", null))
 
@@ -82,6 +85,14 @@ object PokerSession {
     }
   }
 
+  def listPublicGames(name: String, onLoaded: List[PublicGameInfo] => Unit, errorHandler: String => Unit): Unit = {
+    configure(name, ScenesNavigator.showServerState, errorHandler)
+    publicGamesHandlerRef.set(onLoaded)
+    afterIdentify {
+      client.send(ClientMessage.ListPublicGames())
+    }
+  }
+
   def startGame(): Unit = {
     sendWithCode(ClientMessage.StartGame.apply)
   }
@@ -105,6 +116,10 @@ object PokerSession {
 
   def leaveGame(): Unit = {
     sendWithCode(ClientMessage.LeaveGame.apply)
+  }
+
+  def updateSettings(settings: GameSettings): Unit = {
+    sendWithCode(code => ClientMessage.UpdateSettings(code, settings))
   }
 
   private def sendWithCode(build: String => ClientMessage): Unit =
@@ -172,7 +187,7 @@ object PokerSession {
       case ServerMessage.GameStarted(code, state) => showState(code, state)
       case ServerMessage.StateUpdate(code, state) => showState(code, state)
       case ServerMessage.GameOver(code, _, _, state) => showState(code, state)
-
+      case ServerMessage.PublicGameList(games) => Platform.runLater { publicGamesHandlerRef.get()(games) }
       case ServerMessage.Error(msg) => Platform.runLater {errorHandlerRef.get()(msg)}
       case _ => ()
     }

@@ -46,8 +46,13 @@ object CreateGamePanel {
         children = Seq(dollarsLeft, titleLabel, dollarsRight)
       }
 
+      var isPublicMode = false
       val modeGroup = new ToggleGroup()
-      val modeToggle = GameModeToggle(modeGroup, () => {}, () => {})
+      val modeToggle = GameModeToggle(
+        modeGroup,
+        () => isPublicMode = false,
+        () => isPublicMode = true
+      )
 
       val playerNameField = new TextField {
         promptText = "Nazwa gracza"
@@ -106,7 +111,7 @@ object CreateGamePanel {
         (row, slider)
       }
 
-      val (maxPlayersRow, _) = createSliderRow("Max graczy:", 4, 10, 6)
+      val (maxPlayersRow, maxPlayersSlider) = createSliderRow("Max graczy:", 4, 10, 6)
       val (buyInRow, buyInSlider) = createSliderRow("Wpisowe ($):", 100, 10000, 1000)
       val (smallBlindRow, smallBlindSlider) = createSliderRow("Small Blind:", 5, 500, 10)
       val (bigBlindRow, bigBlindSlider) = createSliderRow("Big Blind:", 10, 1000, 20)
@@ -145,9 +150,12 @@ object CreateGamePanel {
           )
 
           PokerSession.createGame(GameSettings(
+            name = customRoomName.text.value,
             smallBlind = smallBlindSlider.value.value.toInt,
             bigBlind = bigBlindSlider.value.value.toInt,
-            initialChips = buyInSlider.value.value.toInt
+            initialChips = buyInSlider.value.value.toInt,
+            isPublic = isPublicMode,
+            maxPlayers = maxPlayersSlider.value.value.toInt
           ))
         }))
       }

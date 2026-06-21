@@ -27,7 +27,7 @@ import scala.util.{Failure, Success}
  *   client.send(ClientMessage.Identify("Alice", storedPlayerId))
  * }}}
  */
-val isDebug = false
+val isDebug = true
 class PokerClient(serverUrl: String) {
 
   private given system: ActorSystem[Nothing] =
