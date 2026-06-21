@@ -1,0 +1,101 @@
+.waiting-room-scene {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 70%, #2e7d32, #1b5e20);
+}
+
+.ready-button {
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2px;
+    -fx-border-radius: 30px;
+    -fx-background-radius: 30px;
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.ready-button:hover {
+    -fx-background-color: rgba(212, 175, 55, 0.4);
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2px;
+    -fx-border-radius: 30px;
+    -fx-background-radius: 30px;
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.waiting-room-panel {
+    -fx-background-color: rgba(0, 0, 0, 0.85);
+    -fx-background-radius: 20;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 3;
+    -fx-border-radius: 20;
+}
+
+.waiting-room-panel-title {
+    -fx-text-fill: white;
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Noto Serif Display", serif;
+}
+
+.waiting-room-panel-room-info-row {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-padding: 15;
+    -fx-background-radius: 10;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+}
+
+.waiting-room-panel-players-list {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-control-inner-background: transparent;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.waiting-room-panel-slider-value {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.waiting-room-panel-slider-text-field {
+    -fx-font-size: 12px;
+    -fx-alignment: center;
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 1.5;
+}
+
+.waiting-room-panel-slider {
+    -fx-accent: #d4af37;
+    -fx-control-inner-background: rgba(0, 0, 0, 0.5);
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.waiting-room-panel-settings {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-padding: 25;
+    -fx-background-radius: 10;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+}
+
+.waiting-room-panel-new-room {
+    -fx-font-size: 14px;
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 1.5;
+}

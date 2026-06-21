@@ -13,7 +13,7 @@ class PokerEngineSpec extends AnyFlatSpec with Matchers {
 
   "PokerEngine.distributePotAndReset" should "award the full pot to the sole winner" in {
     val winner = makePlayer("w", 0, HoleCards(Card(Rank.Ace, Suit.Spades), Card(Rank.Ace, Suit.Hearts)))
-    val loser  = makePlayer("l", 0, HoleCards(Card(Rank.Two, Suit.Clubs), Card(Rank.Three, Suit.Diamonds)))
+    val loser = makePlayer("l", 0, HoleCards(Card(Rank.Two, Suit.Clubs), Card(Rank.Three, Suit.Diamonds)))
 
     val board = Board.River(
       Card(Rank.Ace, Suit.Clubs), Card(Rank.Ace, Suit.Diamonds), Card(Rank.King, Suit.Spades),
@@ -62,9 +62,9 @@ class PokerEngineSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "correctly compute a side pot when one player is all-in for less" in {
-    val allIn  = makePlayer("short", 0, HoleCards(Card(Rank.Ace, Suit.Spades), Card(Rank.Ace, Suit.Hearts)))
-    val deep1  = makePlayer("deep1", 0, HoleCards(Card(Rank.Two, Suit.Clubs), Card(Rank.Three, Suit.Diamonds)))
-    val deep2  = makePlayer("deep2", 0, HoleCards(Card(Rank.Four, Suit.Clubs), Card(Rank.Five, Suit.Diamonds)))
+    val allIn = makePlayer("short", 0, HoleCards(Card(Rank.Ace, Suit.Spades), Card(Rank.Ace, Suit.Hearts)))
+    val deep1 = makePlayer("deep1", 0, HoleCards(Card(Rank.Two, Suit.Clubs), Card(Rank.Three, Suit.Diamonds)))
+    val deep2 = makePlayer("deep2", 0, HoleCards(Card(Rank.Four, Suit.Clubs), Card(Rank.Five, Suit.Diamonds)))
 
     val board = Board.River(
       Card(Rank.Ace, Suit.Clubs), Card(Rank.Ace, Suit.Diamonds), Card(Rank.King, Suit.Spades),
@@ -110,7 +110,7 @@ class PokerEngineSpec extends AnyFlatSpec with Matchers {
       settings = GameSettings(smallBlind = 10, bigBlind = 20),
       players = List(
         Player("p1", "Alice", 1000),
-        Player("p2", "Bob",   1000)
+        Player("p2", "Bob", 1000)
       )
     )
     val result = PokerEngine.startNewHand(state)
@@ -129,7 +129,7 @@ class PokerEngineSpec extends AnyFlatSpec with Matchers {
       settings = settings,
       players = List(
         Player("p1", "Alice", 1000),
-        Player("p2", "Bob",   1000)
+        Player("p2", "Bob", 1000)
       ),
       dealerIndex = 0
     )
@@ -147,7 +147,7 @@ class PokerEngineSpec extends AnyFlatSpec with Matchers {
       settings = GameSettings(),
       players = List(
         Player("p1", "Alice", 1000),
-        Player("p2", "Bob",   1000),
+        Player("p2", "Bob", 1000),
         Player("p3", "Carol", 1000)
       ),
       dealerIndex = 0
@@ -162,7 +162,7 @@ class PokerEngineSpec extends AnyFlatSpec with Matchers {
       settings = GameSettings(smallBlind = 10, bigBlind = 20),
       players = List(
         Player("p1", "Alice", 1000),
-        Player("p2", "Bob",   0),
+        Player("p2", "Bob", 0),
         Player("p3", "Carol", 1000)
       )
     )
@@ -178,7 +178,7 @@ class PokerEngineSpec extends AnyFlatSpec with Matchers {
       settings = GameSettings(),
       players = List(
         Player("p1", "Alice", 1000),
-        Player("p2", "Bob",   0)
+        Player("p2", "Bob", 0)
       )
     )
     val result = PokerEngine.startNewHand(state)

@@ -10,7 +10,10 @@ import java.util.prefs.Preferences
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-object PokerSession {
+class PokerSessionService(
+   client: PokerClientApi,
+   runLater: (() => Unit) => Unit = action => Platform.runLater(action())
+ ) {
   private given ExecutionContext = ExecutionContext.global
 
   private case class SessionState(
@@ -23,12 +26,8 @@ object PokerSession {
                                    pending: Vector[() => Unit] = Vector.empty
                                  )
 
-  private val prefs = Preferences.userNodeForPackage(PokerSession.getClass)
-  private val serverUrl = sys.props.get("poker.serverUrl")
-    .orElse(sys.env.get("POKER_WS_URL"))
-    .getOrElse("ws://localhost:8080/ws")
+  private val prefs = Preferences.userNodeForPackage(classOf[PokerSessionService])
 
-  private val client = PokerClient(serverUrl)
   private val stateRef = AtomicReference(SessionState())
 
   private val stateHandlerRef =
@@ -140,7 +139,7 @@ object PokerSession {
         }
         case Failure(ex) => {
           stateRef.updateAndGet(_.copy(connecting = false))
-          Platform.runLater {
+          runLater { () =>
             errorHandlerRef.get()(s"Connection failed: ${ex.getMessage}")
           }
         }
@@ -173,7 +172,7 @@ object PokerSession {
       case ServerMessage.StateUpdate(code, state) => showState(code, state)
       case ServerMessage.GameOver(code, _, _, state) => showState(code, state)
 
-      case ServerMessage.Error(msg) => Platform.runLater {errorHandlerRef.get()(msg)}
+      case ServerMessage.Error(msg) => runLater { () => errorHandlerRef.get()(msg) }
       case _ => ()
     }
   }
@@ -183,8 +182,48 @@ object PokerSession {
 
     val id = state.playerId.getOrElse("")
 
-    Platform.runLater {
-      stateHandlerRef.get()(code, id, gameState)
-    }
+    runLater {() => stateHandlerRef.get()(code, id, gameState)}
   }
+}
+
+object PokerSession {
+  private val serverUrl = sys.props.get("poker.serverUrl")
+    .orElse(sys.env.get("POKER_WS_URL"))
+    .getOrElse("ws://localhost:8080/ws")
+
+  private val service = new PokerSessionService(new PokerClient(serverUrl))
+
+  def configure(
+                 name: String,
+                 stateHandler: (String, String, ClientGameState) => Unit,
+                 errorHandler: String => Unit = msg => println(s"Server error: $msg")
+               ): Unit =
+    service.configure(name, stateHandler, errorHandler)
+
+  def currentView: Option[(String, String, ClientGameState)] =
+    service.currentView
+
+  def createGame(settings: GameSettings): Unit =
+    service.createGame(settings)
+
+  def joinGame(code: String): Unit =
+    service.joinGame(code)
+
+  def startGame(): Unit =
+    service.startGame()
+
+  def fold(): Unit =
+    service.fold()
+
+  def check(): Unit =
+    service.check()
+
+  def call(): Unit =
+    service.call()
+
+  def raise(amount: Int): Unit =
+    service.raise(amount)
+
+  def leaveGame(): Unit =
+    service.leaveGame()
 }

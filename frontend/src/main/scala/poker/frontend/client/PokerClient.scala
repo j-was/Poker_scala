@@ -27,7 +27,8 @@ import scala.util.{Failure, Success}
  *   client.send(ClientMessage.Identify("Alice", storedPlayerId))
  * }}}
  */
-class PokerClient(serverUrl: String) {
+val isDebug = false
+class PokerClient(serverUrl: String) extends PokerClientApi {
 
   private given system: ActorSystem[Nothing] =
     ActorSystem(Behaviors.empty, "poker-client")
@@ -49,8 +50,13 @@ class PokerClient(serverUrl: String) {
    * Enqueue a message to be sent to the server.
    * Returns false if the queue is full (backpressure; should not happen in normal play).
    */
-  def send(msg: ClientMessage): Boolean =
+  def send(msg: ClientMessage): Boolean = {
+    if(isDebug) {
+        println(s"[WYCHODZĄCE] Obiekt: $msg")
+        println(s"[WYCHODZĄCE] JSON: ${msg.asJson.noSpaces}")
+      }
     sendQueue.offer(msg)
+  }
 
   /**
    * Establish (or re-establish) the WebSocket connection.
@@ -58,7 +64,9 @@ class PokerClient(serverUrl: String) {
    */
   def connect(): Future[Unit] = {
     val connected = Promise[Unit]()
-
+    if (isDebug) {
+      println(s"${serverUrl}")
+    }
     val outgoingSource: Source[Message, ?] = {
       Source
         .queue[Message](512, OverflowStrategy.dropHead)
@@ -84,6 +92,9 @@ class PokerClient(serverUrl: String) {
     val incomingSink: Sink[Message, ?] = {
       Sink.foreach[Message] {
         case TextMessage.Strict(text) =>
+          if(isDebug) {
+            println(s"[PRZYCHODZĄCE] JSON: $text")
+          }
           decode[ServerMessage](text) match
             case Right(msg) => messageHandler(msg)
             case Left(err) => system.log.warn(s"Could not decode server message: $err")
@@ -107,6 +118,9 @@ class PokerClient(serverUrl: String) {
           Future.successful(())
         }
         else {
+          if (isDebug) {
+            println(s"[BŁĄD POŁĄCZENIA] Odrzucono: ${upgrade.response.status}")
+          }
           val ex = new RuntimeException(s"WebSocket upgrade failed: ${upgrade.response.status}")
           connected.failure(ex)
           Future.failed(ex)
@@ -114,6 +128,9 @@ class PokerClient(serverUrl: String) {
       }
       }
       .recover { case ex => {
+        if (isDebug) {
+          println(s"[BŁĄD POŁĄCZENIA] Awaria sieci: ${ex.getMessage}")
+        }
         connectionHandler(false)
         system.log.error(s"WebSocket connection failed: ${ex.getMessage}")
       }

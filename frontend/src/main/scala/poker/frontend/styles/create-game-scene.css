@@ -1,0 +1,84 @@
+.create-game-scene {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 70%, #2e7d32, #1b5e20);
+}
+
+.create-button {
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2px;
+    -fx-border-radius: 30px;
+    -fx-background-radius: 30px;
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.create-button:hover {
+    -fx-background-color: rgba(212, 175, 55, 0.4);
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2px;
+    -fx-border-radius: 30px;
+    -fx-background-radius: 30px;
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.create-game-panel {
+    -fx-background-color: rgba(0, 0, 0, 0.85);
+    -fx-background-radius: 20;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 3;
+    -fx-border-radius: 20;
+}
+
+.create-game-panel-title {
+    -fx-text-fill: white;
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Noto Serif Display", serif;
+}
+
+.create-game-panel-player-name {
+    -fx-font-size: 18px;
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2;
+}
+
+.create-game-panel-custom-room-name {
+    -fx-font-size: 18px;
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2;
+}
+
+.create-game-panel-slider-label {
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.create-game-panel-slider-text {
+    -fx-font-size: 16px;
+    -fx-alignment: center;
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 1.5;
+}
+
+.create-game-panel-slider {
+    -fx-accent: #d4af37;
+    -fx-control-inner-background: rgba(0, 0, 0, 0.5);
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-padding: 10px 0;
+}

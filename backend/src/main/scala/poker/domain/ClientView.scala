@@ -1,34 +1,34 @@
 package poker.domain
 
 case class ClientPlayer(
-    id: String,
-    name: String,
-    chips: Int,
-    currentBet: Int,
-    isActive: Boolean,
-    hasActed: Boolean,
-    hasCards: Boolean
-)
+                         id: String,
+                         name: String,
+                         chips: Int,
+                         currentBet: Int,
+                         isActive: Boolean,
+                         hasActed: Boolean,
+                         hasCards: Boolean
+                       )
 
 case class ClientGameState(
-    id: String,
-    status: GameStatus,
-    settings: GameSettings,
-    board: Board,
-    players: List[ClientPlayer],
-    pot: Int,
-    dealerIndex: Int,
-    currentPlayerIndex: Int,
-    currentHighestBet: Int,
-    myHoleCards: Option[HoleCards],
-    myHandCategory: Option[HandCategory],
-    myBestCards: Option[List[Card]]
-)
+                            id: String,
+                            status: GameStatus,
+                            settings: GameSettings,
+                            board: Board,
+                            players: List[ClientPlayer],
+                            pot: Int,
+                            dealerIndex: Int,
+                            currentPlayerIndex: Int,
+                            currentHighestBet: Int,
+                            myHoleCards: Option[HoleCards],
+                            myHandCategory: Option[HandCategory],
+                            myBestCards: Option[List[Card]]
+                          )
 
 extension (state: GameState)
   /** Builds a safe, player-specific view of the game state.
-   *  Other players' hole cards are hidden (only hasCards flag is exposed).
-   *  The requesting player receives their own cards and current hand evaluation. */
+   * Other players' hole cards are hidden (only hasCards flag is exposed).
+   * The requesting player receives their own cards and current hand evaluation. */
   def toClientView(playerId: String): ClientGameState =
     val clientPlayers = state.players.map { p =>
       ClientPlayer(
