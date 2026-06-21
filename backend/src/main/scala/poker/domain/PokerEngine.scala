@@ -3,14 +3,14 @@ package poker.domain
 object PokerEngine:
 
   /** Starts a new hand: shuffles deck, deals 2 cards to each player with chips,
-   *  posts blinds, and sets the first player to act. Players with 0 chips sit out. */
+   * posts blinds, and sets the first player to act. Players with 0 chips sit out. */
   def startNewHand(state: GameState): GameState =
     if state.players.size < 2 then
       return state.copy(status = GameStatus.Finished)
 
     val deck1 = Deck.full().shuffle
     var currentDeck = deck1
-    
+
     val playersWithCards = state.players.map { p =>
       if p.chips > 0 then
         val (cards, newDeck) = currentDeck.draw(2)
@@ -25,10 +25,10 @@ object PokerEngine:
       return state.copy(status = GameStatus.Finished)
 
     val dealerIdx = (state.dealerIndex + 1) % playersWithCards.size
-    
+
     val activeIndices = playersWithCards.indices.filter(i => playersWithCards(i).isActive)
     val sortedActive = activeIndices.sortBy(i => if i >= dealerIdx then i - dealerIdx else i + playersWithCards.size)
-    
+
     val sbIdx = if activeCount == 2 then dealerIdx else sortedActive(1)
     val bbIdx = if activeCount == 2 then sortedActive(1) else sortedActive(2)
 
@@ -57,8 +57,8 @@ object PokerEngine:
     )
 
   /** Moves the game to the next street (PreFlop → Flop → Turn → River → Showdown).
-   *  Collects all bets into the pot first. If only one player remains active, awards
-   *  the pot immediately without going to showdown. */
+   * Collects all bets into the pot first. If only one player remains active, awards
+   * the pot immediately without going to showdown. */
   def advancePhase(state: GameState): GameState =
     val stateWithCollectedBets = state.collectBets
     val activeCount = stateWithCollectedBets.activePlayers.size
@@ -92,14 +92,14 @@ object PokerEngine:
           distributePotAndReset(stateWithCollectedBets)
 
   /** Evaluates all active players' hands, handles side pots for all-in situations,
-   *  distributes chips to winner(s), then resets the table to WaitingForPlayers.
-   *  Sets status to Finished if only one player has chips left. */
+   * distributes chips to winner(s), then resets the table to WaitingForPlayers.
+   * Sets status to Finished if only one player has chips left. */
   def distributePotAndReset(state: GameState): GameState =
     val activePlayers = state.activePlayers
-    
+
     var contributions = state.pot.contributions
     var playersState = state.players.map(p => p.id -> p).toMap
-    
+
     val tiers: List[List[String]] = if activePlayers.size == 1 then
       List(List(activePlayers.head.id))
     else
@@ -108,22 +108,22 @@ object PokerEngine:
 
     for (winners <- tiers if contributions.values.sum > 0) do
       var currentWinners = winners.filter(w => contributions.getOrElse(w, 0) > 0)
-      
+
       while currentWinners.nonEmpty && contributions.values.sum > 0 do
         val minContrib = currentWinners.map(contributions).min
         val takeAmounts = contributions.view.mapValues(c => math.min(c, minContrib)).toMap
         val subPot = takeAmounts.values.sum
         contributions = contributions.map { case (pId, c) => pId -> (c - takeAmounts(pId)) }
-        
+
         val winAmount = subPot / currentWinners.size
         val extra = subPot % currentWinners.size
-        
+
         currentWinners.zipWithIndex.foreach { case (wId, idx) =>
           val p = playersState(wId)
           val bonus = if idx == 0 then extra else 0
           playersState = playersState.updated(wId, p.copy(chips = p.chips + winAmount + bonus))
         }
-        
+
         currentWinners = currentWinners.filter(w => contributions.getOrElse(w, 0) > 0)
 
     val totalRemaining = contributions.values.sum
@@ -145,7 +145,7 @@ object PokerEngine:
       players = finalPlayers,
       board = Board.PreFlop
     )
-    
+
     if finalPlayers.count(_.chips > 0) <= 1 then
       finalState.copy(status = GameStatus.Finished)
     else

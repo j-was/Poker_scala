@@ -4,35 +4,36 @@ enum GameStatus:
   case WaitingForPlayers, Playing, Finished
 
 case class Player(
-    id: String,
-    name: String,
-    chips: Int,
-    holeCards: Option[HoleCards] = None,
-    currentBet: Int = 0,
-    isActive: Boolean = true,
-    hasActed: Boolean = false
-)
+                   id: String,
+                   name: String,
+                   chips: Int,
+                   holeCards: Option[HoleCards] = None,
+                   currentBet: Int = 0,
+                   isActive: Boolean = true,
+                   hasActed: Boolean = false
+                 )
 
 case class Pot(contributions: Map[String, Int] = Map.empty):
   def amount: Int = contributions.values.sum
+
   def add(playerId: String, addedAmount: Int): Pot =
     Pot(contributions.updated(playerId, contributions.getOrElse(playerId, 0) + addedAmount))
 
 case class GameState(
-    id: String,
-    status: GameStatus = GameStatus.WaitingForPlayers,
-    settings: GameSettings = GameSettings(),
-    board: Board = Board.PreFlop,
-    players: List[Player] = List.empty,
-    pot: Pot = Pot(),
-    deck: Deck = Deck.full().shuffle,
-    dealerIndex: Int = 0,
-    currentPlayerIndex: Int = 0,
-    currentHighestBet: Int = 0
-):
+                      id: String,
+                      status: GameStatus = GameStatus.WaitingForPlayers,
+                      settings: GameSettings = GameSettings(),
+                      board: Board = Board.PreFlop,
+                      players: List[Player] = List.empty,
+                      pot: Pot = Pot(),
+                      deck: Deck = Deck.full().shuffle,
+                      dealerIndex: Int = 0,
+                      currentPlayerIndex: Int = 0,
+                      currentHighestBet: Int = 0
+                    ):
   def activePlayers: List[Player] = players.filter(_.isActive)
 
-  def currentPlayer: Option[Player] = 
+  def currentPlayer: Option[Player] =
     if players.indices.contains(currentPlayerIndex) then Some(players(currentPlayerIndex)) else None
 
   def nextPlayerIndex(currentIndex: Int): Int =
@@ -51,7 +52,7 @@ case class GameState(
     this.copy(players = players.map(p => if p.id == player.id then player else p))
 
   /** Returns true when all active players have acted and matched the highest bet.  
-   *  Also returns true if only one player remains (everyone else folded). */
+   * Also returns true if only one player remains (everyone else folded). */
   def isBettingRoundOver: Boolean =
     val active = activePlayers
     if active.size <= 1 then true
