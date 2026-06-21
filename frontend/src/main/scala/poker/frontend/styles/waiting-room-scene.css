@@ -99,3 +99,10 @@
     -fx-border-color: #d4af37;
     -fx-border-width: 1.5;
 }
+
+.game-mode-toggle {
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
