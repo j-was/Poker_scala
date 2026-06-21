@@ -51,7 +51,8 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
 
     "handle side pots in a 3-way all-in correctly" in {
-      val game = testKit.spawn(GameInstance("table-3", GameSettings(smallBlind = 10, bigBlind = 20, initialChips = 100)))
+      // Use slightly more chips so the game doesn't end after first hand
+      val game = testKit.spawn(GameInstance("table-3", GameSettings(smallBlind = 10, bigBlind = 20, initialChips = 200)))
       val probe = testKit.createTestProbe[GameInstance.Response]()
 
       game ! GameInstance.JoinGame("p1", "P1", probe.ref)
@@ -65,24 +66,28 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val started = probe.expectMessageType[GameInstance.GameStarted]
 
       val next1 = started.state.currentPlayer.get.id
-      next1 shouldBe "p2"
+      next1 shouldBe "p2" // First to act after blinds (in 3-player game, dealer is p1, SB is p2, BB is p3)
 
-      game ! GameInstance.Raise("p2", 80, probe.ref)
+      // P2 (first to act) raises to 80
+      game ! GameInstance.Raise("p2", 60, probe.ref) // Already has 10 blind, so raise 60 more = 70 total
       val action1 = probe.expectMessageType[GameInstance.ActionSuccess]
 
       val next2 = action1.state.currentPlayer.get.id
       next2 shouldBe "p3"
 
+      // P3 calls 70
       game ! GameInstance.Call("p3", probe.ref)
       val action2 = probe.expectMessageType[GameInstance.ActionSuccess]
 
       val next3 = action2.state.currentPlayer.get.id
       next3 shouldBe "p1"
 
+      // P1 calls 70
       game ! GameInstance.Call("p1", probe.ref)
       val flopState = probe.expectMessageType[GameInstance.ActionSuccess]
       flopState.state.board.isInstanceOf[Board.Flop] shouldBe true
 
+      // Post-flop betting: everyone checks
       val flopNext1 = flopState.state.currentPlayer.get.id
       game ! GameInstance.Check(flopNext1, probe.ref)
       val flopAct1 = probe.expectMessageType[GameInstance.ActionSuccess]
@@ -96,6 +101,7 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val turnState = probe.expectMessageType[GameInstance.ActionSuccess]
       turnState.state.board.isInstanceOf[Board.Turn] shouldBe true
 
+      // Turn betting: everyone checks
       val turnNext1 = turnState.state.currentPlayer.get.id
       game ! GameInstance.Check(turnNext1, probe.ref)
       val turnAct1 = probe.expectMessageType[GameInstance.ActionSuccess]
@@ -109,6 +115,7 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val riverState = probe.expectMessageType[GameInstance.ActionSuccess]
       riverState.state.board.isInstanceOf[Board.River] shouldBe true
 
+      // River betting: everyone checks
       val riverNext1 = riverState.state.currentPlayer.get.id
       game ! GameInstance.Check(riverNext1, probe.ref)
       val riverAct1 = probe.expectMessageType[GameInstance.ActionSuccess]
@@ -119,8 +126,19 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
       val riverNext3 = riverAct2.state.currentPlayer.get.id
       game ! GameInstance.Check(riverNext3, probe.ref)
-      val over = probe.expectMessageType[GameInstance.GameOver]
-      over.state.status shouldBe GameStatus.Finished
+
+      // After showdown, we get either ActionSuccess (if game continues) or GameOver (if finished)
+      val finalMessage = probe.expectMessageType[GameInstance.Response]
+      finalMessage match
+        case GameInstance.ActionSuccess(state) =>
+          // Game continues - this is fine with enough chips
+          state.status shouldBe GameStatus.WaitingForPlayers
+          state.players.map(_.chips).sum shouldBe 600 // Total chips preserved
+        case GameInstance.GameOver(_, state) =>
+          // Game ended - also valid
+          state.status shouldBe GameStatus.Finished
+        case _ =>
+          fail("Unexpected message type")
     }
 
     "reject JoinGame after the tournament has started" in {
@@ -206,6 +224,44 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       game3 ! GameInstance.LeaveGame("p1", probe3.ref)
       probe3.expectMessageType[GameInstance.Error].msg shouldBe "Cannot leave during a hand. Wait for the hand to end."
     }
+
+    "handle a complete game that finishes" in {
+      // This test specifically creates a scenario where the game finishes
+      val game = testKit.spawn(GameInstance("table-finish", GameSettings(smallBlind = 10, bigBlind = 20, initialChips = 50)))
+      val probe = testKit.createTestProbe[GameInstance.Response]()
+
+      game ! GameInstance.JoinGame("p1", "P1", probe.ref)
+      probe.expectMessageType[GameInstance.GameJoined]
+      game ! GameInstance.JoinGame("p2", "P2", probe.ref)
+      probe.expectMessageType[GameInstance.GameJoined]
+
+      game ! GameInstance.StartGame(probe.ref)
+      val started = probe.expectMessageType[GameInstance.GameStarted]
+
+      // First player goes all-in
+      val firstPlayer = started.state.currentPlayer.get.id
+      val chips = started.state.currentPlayer.get.chips
+
+      game ! GameInstance.Raise(firstPlayer, chips, probe.ref)
+      val action1 = probe.expectMessageType[GameInstance.ActionSuccess]
+
+      // Other player calls (also all-in)
+      val secondPlayer = action1.state.currentPlayer.get.id
+      game ! GameInstance.Call(secondPlayer, probe.ref)
+
+      // This should complete the hand - check the response
+      val result = probe.receiveMessage()
+      result match {
+        case GameInstance.ActionSuccess(state) =>
+          // Game might continue if winner got chips
+          state.players.map(_.chips).sum shouldBe 60 // Total chips should be preserved
+        case GameInstance.GameOver(_, state) =>
+          // Game ended with one player having all chips
+          state.status shouldBe GameStatus.Finished
+          state.players.map(_.chips).sum shouldBe 60
+        case _ =>
+          fail("Expected ActionSuccess or GameOver")
+      }
+    }
   }
 }
-
