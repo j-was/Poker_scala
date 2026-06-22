@@ -243,7 +243,6 @@ object ClientConnection {
           sessionRegistry ! SessionRegistry.LeftGame(playerId, code)
           sessionRegistry ! SessionRegistry.BroadcastToGame(code, state, (_, cs) => ServerMessage.StateUpdate(code, cs))
           sessionRegistry ! SessionRegistry.BroadcastRaw(code, ServerMessage.PlayerLeft(code, playerId, name))
-          outgoing ! ServerMessage.StateUpdate(code, state.toClientView(playerId))
           connected(playerId, name, None, sessionRegistry, gameRegistry, outgoing)
         }
 

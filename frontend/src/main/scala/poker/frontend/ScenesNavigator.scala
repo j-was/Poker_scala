@@ -39,11 +39,7 @@ object ScenesNavigator
       onCall = () => poker.frontend.client.PokerSession.call(),
       onCheck = () => poker.frontend.client.PokerSession.check(),
       onRaise = amount => poker.frontend.client.PokerSession.raise(amount),
-      onStartGame = () => poker.frontend.client.PokerSession.startGame(),
-      onLeave = () => {
-        poker.frontend.client.PokerSession.leaveGame()
-        showMainStage()
-      }
+      onStartGame = () => poker.frontend.client.PokerSession.startGame()
     )
   }
 
@@ -88,7 +84,6 @@ object ScenesNavigator
 
   def showGameResult(code: String, winnerId: String, winnerName: String, state: ClientGameState): Unit = {
     mainStage.scene = GameResult(code, winnerId, winnerName, state, onReturnToLobby = () => {
-      poker.frontend.client.PokerSession.leaveGame()
       showMainStage()
     })
   }
