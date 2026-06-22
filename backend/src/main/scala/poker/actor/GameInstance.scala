@@ -37,6 +37,8 @@ object GameInstance:
 
   case class UpdatePlayerCount(delta: Int) extends Command
 
+  case class DissolveGame(replyTo: ActorRef[Response]) extends Command
+
   sealed trait Response
 
   case class GameJoined(playerId: String, state: GameState) extends Response
@@ -118,12 +120,21 @@ object GameInstance:
     case LeaveGame(playerId, replyTo) =>
       val newState = state.copy(players = state.players.filterNot(_.id == playerId))
       replyTo ! ActionSuccess(newState)
-      waitingForPlayers(newState, autoFoldService, sessionRegistry, self)
+
+      if (newState.players.isEmpty) {
+        Behaviors.stopped
+      } else {
+        waitingForPlayers(newState, autoFoldService, sessionRegistry, self)
+      }
 
     case UpdateSettings(newSettings, replyTo) =>
       val updatedState = state.copy(settings = newSettings)
       replyTo ! SettingsUpdated(updatedState)
       waitingForPlayers(updatedState, autoFoldService, sessionRegistry, self)
+
+    case DissolveGame(replyTo) =>
+      replyTo ! ActionSuccess(state)
+      Behaviors.stopped
 
     case _ =>
       Behaviors.unhandled
@@ -163,6 +174,10 @@ object GameInstance:
       val updatedState = state.copy(settings = newSettings)
       replyTo ! SettingsUpdated(updatedState)
       betweenHands(updatedState, autoFoldService, sessionRegistry, self)
+
+    case DissolveGame(replyTo) =>
+      replyTo ! ActionSuccess(state)
+      Behaviors.stopped
 
     case _ =>
       Behaviors.unhandled
@@ -223,6 +238,10 @@ object GameInstance:
 
     case LeaveGame(playerId, replyTo) =>
       replyTo ! Error("Cannot leave during a hand. Wait for the hand to end.")
+      Behaviors.same
+
+    case DissolveGame(replyTo) =>
+      replyTo ! Error("Cannot dissolve game during an active hand")
       Behaviors.same
 
     case _ => Behaviors.unhandled

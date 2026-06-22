@@ -255,5 +255,28 @@ class GameInstanceSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
           fail("Expected ActionSuccess")
       }
     }
+
+    "dissolve game when host leaves with no other players" in {
+      val game = testKit.spawn(GameInstance("table-dissolve"))
+      val probe = testKit.createTestProbe[GameInstance.Response]()
+
+      game ! GameInstance.JoinGame("host", "Host", probe.ref)
+      probe.expectMessageType[GameInstance.GameJoined]
+
+      game ! GameInstance.JoinGame("player2", "Player2", probe.ref)
+      probe.expectMessageType[GameInstance.GameJoined]
+
+      game ! GameInstance.LeaveGame("player2", probe.ref)
+      probe.expectMessageType[GameInstance.ActionSuccess]
+
+      game ! GameInstance.LeaveGame("host", probe.ref)
+      val result = probe.receiveMessage()
+      result match {
+        case GameInstance.ActionSuccess(state) =>
+          state.players shouldBe empty
+        case _ =>
+          fail("Expected ActionSuccess with empty players")
+      }
+    }
   }
 }

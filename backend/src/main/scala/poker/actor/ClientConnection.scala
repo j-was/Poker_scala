@@ -399,6 +399,8 @@ object ClientConnection {
     ) {
       case scala.util.Success(GameRegistry.GameCreated(code, ref)) =>
         OnGameCreated(code, ref)
+      case scala.util.Success(GameRegistry.AlreadyHosting(existingCode)) =>
+        OnFailure(s"You already host a game with code '$existingCode'. Your game needs to end before creating a new one.")
       case _ =>
         OnFailure("Failed to create game")
     }
