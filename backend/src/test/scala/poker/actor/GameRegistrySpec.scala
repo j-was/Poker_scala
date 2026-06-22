@@ -110,5 +110,69 @@ class GameRegistrySpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       registry ! GameRegistry.LookupGame(created.code.toUpperCase, lookupProbe.ref)
       lookupProbe.expectMessage(GameRegistry.NotFound)
     }
+    "prevent same player from hosting multiple games" in {
+      val registry = testKit.spawn(GameRegistry())
+      val probe = testKit.createTestProbe[GameRegistry.CreateResult]()
+
+      registry ! GameRegistry.CreateGame("player1", GameSettings(), probe.ref)
+      probe.expectMessageType[GameRegistry.GameCreated]
+
+      registry ! GameRegistry.CreateGame("player1", GameSettings(), probe.ref)
+      probe.expectMessageType[GameRegistry.AlreadyHosting]
+    }
+
+    "auto-dissolve empty game when host creates new game" in {
+      val registry = testKit.spawn(GameRegistry())
+      val probe = testKit.createTestProbe[GameRegistry.CreateResult]()
+
+      registry ! GameRegistry.CreateGame("player1", GameSettings(), probe.ref)
+      val result1 = probe.expectMessageType[GameRegistry.GameCreated]
+
+      registry ! GameRegistry.CreateGame("player1", GameSettings(), probe.ref)
+      val result2 = probe.expectMessageType[GameRegistry.GameCreated]
+
+      val lookupProbe = testKit.createTestProbe[GameRegistry.LookupResult]()
+      registry ! GameRegistry.LookupGame(result1.code, lookupProbe.ref)
+      lookupProbe.expectMessage(GameRegistry.NotFound)
+
+      registry ! GameRegistry.LookupGame(result2.code, lookupProbe.ref)
+      lookupProbe.expectMessageType[GameRegistry.Found]
+    }
+
+    "check if player has a game" in {
+      val registry = testKit.spawn(GameRegistry())
+      val createProbe = testKit.createTestProbe[GameRegistry.CreateResult]()
+      val hasGameProbe = testKit.createTestProbe[Boolean]()
+
+      registry ! GameRegistry.PlayerHasGame("player1", hasGameProbe.ref)
+      hasGameProbe.expectMessage(false)
+
+      registry ! GameRegistry.CreateGame("player1", GameSettings(), createProbe.ref)
+      createProbe.expectMessageType[GameRegistry.GameCreated]
+
+      registry ! GameRegistry.PlayerHasGame("player1", hasGameProbe.ref)
+      hasGameProbe.expectMessage(true)
+    }
+
+    "remove game and clean up host tracking" in {
+      val registry = testKit.spawn(GameRegistry())
+      val createProbe = testKit.createTestProbe[GameRegistry.CreateResult]()
+      val hasGameProbe = testKit.createTestProbe[Boolean]()
+
+      registry ! GameRegistry.CreateGame("player1", GameSettings(), createProbe.ref)
+      val created = createProbe.expectMessageType[GameRegistry.GameCreated]
+
+      registry ! GameRegistry.PlayerHasGame("player1", hasGameProbe.ref)
+      hasGameProbe.expectMessage(true)
+
+      registry ! GameRegistry.RemoveGame(created.code)
+
+      val lookupProbe = testKit.createTestProbe[GameRegistry.LookupResult]()
+      registry ! GameRegistry.LookupGame(created.code, lookupProbe.ref)
+      lookupProbe.expectMessage(GameRegistry.NotFound)
+
+      registry ! GameRegistry.PlayerHasGame("player1", hasGameProbe.ref)
+      hasGameProbe.expectMessage(false)
+    }
   }
 }
