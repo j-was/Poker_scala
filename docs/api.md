@@ -494,22 +494,23 @@ Each player receives a personalised copy — other players' hole cards are never
 
 ## Error reference
 
-| Message                                                             | Cause                                                          |
-| ------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `"Not your turn"`                                                   | Action sent when it isn't your turn                            |
-| `"Cannot check, must call or raise"`                                | Check attempted when there is an outstanding bet               |
-| `"Not enough chips to raise"`                                       | Raise amount exceeds your stack                                |
-| `"You are not in a game"`                                           | Action sent before joining a game                              |
-| `"Game not found. Check the code and try again."`                   | Unknown or expired room code                                   |
-| `"Player already joined"`                                           | Duplicate join with the same playerId                          |
-| `"Cannot join after the game has started"`                          | Join attempted after `StartGame`                               |
-| `"Not enough players to start"`                                     | StartGame with fewer than 2 players                            |
-| `"Game already in progress"`                                        | StartGame sent during an active hand                           |
-| `"Cannot leave during a hand. Wait for the hand to end."`           | LeaveGame mid-hand                                             |
-| `"Tournament is over"`                                              | StartGame after `status: Finished`                             |
-| `"Game name already exists"`                                        | CreateGame with a name that is already taken by an active game |
-| `"Failed to list public games"`                                     | Server error while fetching public game list                   |
-| `"Failed to update settings"` | Settings update rejected or timed out |
+| Message                                                                                                  | Cause                                                          |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `"Not your turn"`                                                                                        | Action sent when it isn't your turn                            |
+| `"Cannot check, must call or raise"`                                                                     | Check attempted when there is an outstanding bet               |
+| `"Not enough chips to raise"`                                                                            | Raise amount exceeds your stack                                |
+| `"You are not in a game"`                                                                                | Action sent before joining a game                              |
+| `"Game not found. Check the code and try again."`                                                        | Unknown or expired room code                                   |
+| `"Player already joined"`                                                                                | Duplicate join with the same playerId                          |
+| `"Cannot join after the game has started"`                                                               | Join attempted after `StartGame`                               |
+| `"Not enough players to start"`                                                                          | StartGame with fewer than 2 players                            |
+| `"Game already in progress"`                                                                             | StartGame sent during an active hand                           |
+| `"Cannot leave during a hand. Wait for the hand to end."`                                                | LeaveGame mid-hand                                             |
+| `"Tournament is over"`                                                                                   | StartGame after `status: Finished`                             |
+| `"Game name already exists"`                                                                             | CreateGame with a name that is already taken by an active game |
+| `"Failed to list public games"`                                                                          | Server error while fetching public game list                   |
+| `"Failed to update settings"`                                                                            | Settings update rejected or timed out                          |
+| `"You already host a game with code 'dark-wolf-456'. Your game needs to end before creating a new one."` | One person can host only one game at a time                    |
 
 # Usage patterns
 

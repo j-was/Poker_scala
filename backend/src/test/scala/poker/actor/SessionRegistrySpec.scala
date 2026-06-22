@@ -120,5 +120,31 @@ class SessionRegistrySpec extends ScalaTestWithActorTestKit with AnyWordSpecLike
 
       probe.expectMessageType[ServerMessage.StateUpdate]
     }
+
+    "clean up player associations when game is removed" in {
+      val registry = testKit.spawn(SessionRegistry())
+      val probe = testKit.createTestProbe[ServerMessage]()
+      val joinedProbe = testKit.createTestProbe[SessionRegistry.JoinedGameResult]()
+
+      registry ! SessionRegistry.Register("player1", probe.ref)
+      registry ! SessionRegistry.Register("player2", probe.ref)
+
+      registry ! SessionRegistry.JoinedGame("player1", "game-1")
+      registry ! SessionRegistry.JoinedGame("player2", "game-1")
+
+      registry ! SessionRegistry.GetJoinedGame("player1", joinedProbe.ref)
+      joinedProbe.expectMessage(SessionRegistry.JoinedGameResult(Some("game-1")))
+
+      registry ! SessionRegistry.GetJoinedGame("player2", joinedProbe.ref)
+      joinedProbe.expectMessage(SessionRegistry.JoinedGameResult(Some("game-1")))
+
+      registry ! SessionRegistry.GameRemoved("game-1")
+
+      registry ! SessionRegistry.GetJoinedGame("player1", joinedProbe.ref)
+      joinedProbe.expectMessage(SessionRegistry.JoinedGameResult(None))
+
+      registry ! SessionRegistry.GetJoinedGame("player2", joinedProbe.ref)
+      joinedProbe.expectMessage(SessionRegistry.JoinedGameResult(None))
+    }
   }
 }
