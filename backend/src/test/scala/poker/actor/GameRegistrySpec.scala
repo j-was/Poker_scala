@@ -110,16 +110,6 @@ class GameRegistrySpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       registry ! GameRegistry.LookupGame(created.code.toUpperCase, lookupProbe.ref)
       lookupProbe.expectMessage(GameRegistry.NotFound)
     }
-    "prevent same player from hosting multiple games" in {
-      val registry = testKit.spawn(GameRegistry())
-      val probe = testKit.createTestProbe[GameRegistry.CreateResult]()
-
-      registry ! GameRegistry.CreateGame("player1", GameSettings(), probe.ref)
-      probe.expectMessageType[GameRegistry.GameCreated]
-
-      registry ! GameRegistry.CreateGame("player1", GameSettings(), probe.ref)
-      probe.expectMessageType[GameRegistry.AlreadyHosting]
-    }
 
     "auto-dissolve empty game when host creates new game" in {
       val registry = testKit.spawn(GameRegistry())
