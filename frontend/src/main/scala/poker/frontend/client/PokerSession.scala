@@ -23,6 +23,7 @@ class PokerSessionService(
                                    connecting: Boolean = false,
                                    currentCode: Option[String] = None,
                                    currentGameState: Option[ClientGameState] = None,
+                                   identityLocked: Boolean = false,
                                    pending: Vector[() => Unit] = Vector.empty
                                  )
 
@@ -44,24 +45,38 @@ class PokerSessionService(
   def configure(name: String, stateHandler: (String, String, ClientGameState) => Unit,
                 errorHandler: String => Unit = msg => println(s"Server error: $msg"))
   : Unit = {
-    val cleanedName = if name.trim.nonEmpty then name.trim else "Player"
-    val storedPlayerId = Option(prefs.get(s"playerId.$cleanedName", null))
-
     stateRef.updateAndGet {
       state =>
+        val requestedName = name.trim
+
+        val cleanedName = if state.identityLocked then state.playerName
+                          else if requestedName.nonEmpty then requestedName
+                          else state.playerName
+        val samePlayer = cleanedName == state.playerName
+        val storedPlayerId = Option(prefs.get(s"playerId.$cleanedName", null))
+        val playerId = if samePlayer then state.playerId.orElse(storedPlayerId) else storedPlayerId
+
         state.copy(
           playerName = cleanedName,
-          playerId = storedPlayerId,
-          identified = false,
-          connecting = false,
-          currentCode = None,
-          pending = Vector.empty
+          playerId = playerId,
+          identified = samePlayer && state.identified,
+          connecting = samePlayer && state.connecting,
+          currentCode = if samePlayer then state.currentCode else None,
+          currentGameState = if samePlayer then state.currentGameState else None,
+          identityLocked = state.identityLocked || requestedName.nonEmpty,
+          pending = if samePlayer then state.pending else Vector.empty
         )
     }
 
     stateHandlerRef.set(stateHandler)
     errorHandlerRef.set(errorHandler)
   }
+
+  def currentPlayerName: String =
+    stateRef.get().playerName
+
+  def isPlayerNameLocked: Boolean =
+    stateRef.get().identityLocked
 
   def currentView: Option[(String, String, ClientGameState)] = {
     val state = stateRef.get()
@@ -258,6 +273,12 @@ object PokerSession {
                  errorHandler: String => Unit = msg => println(s"Server error: $msg")
                ): Unit =
     service.configure(name, stateHandler, errorHandler)
+
+  def currentPlayerName: String =
+    service.currentPlayerName
+
+  def isPlayerNameLocked: Boolean =
+    service.isPlayerNameLocked
 
   def currentView: Option[(String, String, ClientGameState)] =
     service.currentView

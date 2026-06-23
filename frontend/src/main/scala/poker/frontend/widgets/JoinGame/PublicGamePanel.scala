@@ -49,6 +49,8 @@ object PublicGamePanel {
       }
 
       val usernameField = new TextField {
+        text = PokerSession.currentPlayerName
+        editable = !PokerSession.isPlayerNameLocked
         promptText = "Wpisz nazwę"
         prefWidth = 400
         styleClass += "public-game-panel-input"
@@ -176,6 +178,9 @@ object PublicGamePanel {
             val playerName = usernameField.text.value
 
             if (selectedRoom != null && playerName.trim.nonEmpty) {
+              PokerSession.configure(name = playerName, stateHandler = ScenesNavigator.showServerState,
+                errorHandler = msg => ErrorDialog.show(msg))
+
               PokerSession.joinGame(selectedRoom.code)
             }
           })
