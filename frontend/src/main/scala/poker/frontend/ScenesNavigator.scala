@@ -39,19 +39,19 @@ object ScenesNavigator
       onCall = () => poker.frontend.client.PokerSession.call(),
       onCheck = () => poker.frontend.client.PokerSession.check(),
       onRaise = amount => poker.frontend.client.PokerSession.raise(amount),
-      onStartGame = () => poker.frontend.client.PokerSession.startGame(),
-      onLeave = () => {
-        poker.frontend.client.PokerSession.leaveGame()
-        showMainStage()
-      }
+      onStartGame = () => poker.frontend.client.PokerSession.startGame()
     )
   }
 
   def showServerState(code: String, myPlayerId: String, state: ClientGameState): Unit = {
-    if state.status == poker.domain.GameStatus.WaitingForPlayers then
-      showWaitingRoom(code, myPlayerId, state)
-    else
-      showGameScene(code, myPlayerId, state)
+    state.status match {
+      case poker.domain.GameStatus.WaitingForPlayers =>
+        showWaitingRoom(code, myPlayerId, state)
+      case poker.domain.GameStatus.Playing =>
+        showGameScene(code, myPlayerId, state)
+      case poker.domain.GameStatus.Finished =>
+        showMainStage()
+    }
   }
 
   def showMockGameScene(): Unit = {

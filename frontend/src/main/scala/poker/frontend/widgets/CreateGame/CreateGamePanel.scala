@@ -56,6 +56,8 @@ object CreateGamePanel {
       )
 
       val playerNameField = new TextField {
+        text = PokerSession.currentPlayerName
+        editable = !PokerSession.isPlayerNameLocked
         promptText = "Nazwa gracza"
         prefWidth = 320
         styleClass += "create-game-panel-player-name"

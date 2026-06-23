@@ -45,6 +45,8 @@ object PrivateGamePanel {
       }
 
       val usernameField = new TextField {
+        text = PokerSession.currentPlayerName
+        editable = !PokerSession.isPlayerNameLocked
         promptText = "Wpisz nazwę"
         prefWidth = 320
         styleClass += "private-game-panel-input"

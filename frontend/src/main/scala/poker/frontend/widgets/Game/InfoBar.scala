@@ -8,7 +8,7 @@ import scalafx.scene.layout.HBox
 
 
 object InfoBar {
-  def apply(code: String, state: ClientGameState, onLeave: () => Unit): HBox = {
+  def apply(code: String, state: ClientGameState): HBox = {
     new HBox {
       alignment = Pos.CenterLeft
       spacing = 24
@@ -19,8 +19,6 @@ object InfoBar {
         GameLabel(s"Status: ${state.status}", 18),
         GameLabel(s"Pula: ${state.pot}", 18),
         GameLabel(s"Najwyższy zakład: ${state.currentHighestBet}", 18),
-        Spacer(),
-        GameButton("Opuść", "#8b2f2f", "#a03a3a", onLeave)
       )
     }
   }
