@@ -170,6 +170,16 @@ object GameInstance:
       replyTo ! state
       Behaviors.same
 
+    case LeaveGame(playerId, replyTo) =>
+      val newState = state.copy(players = state.players.filterNot(_.id == playerId))
+      replyTo ! ActionSuccess(newState)
+
+      if (newState.players.isEmpty) {
+        Behaviors.stopped
+      } else {
+        betweenHands(newState, autoFoldService, sessionRegistry, self)
+      }
+
     case UpdateSettings(newSettings, replyTo) =>
       val updatedState = state.copy(settings = newSettings)
       replyTo ! SettingsUpdated(updatedState)
