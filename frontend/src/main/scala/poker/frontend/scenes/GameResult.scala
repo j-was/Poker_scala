@@ -35,7 +35,7 @@ object GameResult {
           new Label(s"Pokój: $code") {
             styleClass += "game-result-room-code"
           },
-          new Button("Wróć do poczekalni") {
+          new Button("Wróć do strony głównej") {
             styleClass += "game-result-button"
             onAction = _ => onReturnToLobby()
           }
